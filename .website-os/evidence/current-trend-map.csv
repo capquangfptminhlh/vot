@@ -1,5 +1,5 @@
-trend,observation,use_decision,reason,source_ref
-trust-visible commerce,Verification shown near seller and transaction actions,USE,Reduces trust friction,stockx
-structured condition taxonomy,Used items expose condition clearly,USE,Critical to secondhand paddles,stockx
-mobile-first utility,Core jobs prioritized on small screens,USE,Primary marketplace device pattern,figma
-generic bento,Common template pattern,REJECT,Does not improve marketplace jobs,webflow
+trend,status,use_decision,rationale
+Persistent search and filters,VERIFIED,USE,Marketplace discovery task
+Trust status near product and seller,VERIFIED,USE,Reduces uncertainty in peer-to-peer context
+Bottom mobile navigation,VERIFIED,USE,Fast thumb access to browse sell orders profile
+Decorative bento overload,VERIFIED,REJECT,Would dilute transaction-first hierarchy

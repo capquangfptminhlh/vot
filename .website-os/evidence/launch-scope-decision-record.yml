@@ -1,8 +1,8 @@
 decision: PASS
-observed_at: 2026-09-11T12:35:00+07:00
-approved_launch_pages: 11
-local_pages: 0
-all_p0_p1_clusters_have_explicit_decision: true
-all_launch_pages_in_inventory: true
-all_retained_keywords_mapped_or_held: true
-image_plan_present: true
+observed_at: 2026-09-11
+approved_scope: ChoVot marketplace first launch prototype
+launch_pages: 7
+noindex_product_flows: 1
+notes:
+  - All P0/P1 clusters have an explicit owner or scope decision.
+  - Real KYC, escrow and shipping integrations remain post-prototype integration work and are not claimed live.

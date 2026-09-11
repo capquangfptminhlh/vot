@@ -1,10 +1,7 @@
 keyword,cluster_id,target_url,coverage_type,launch_status,content_section_or_page,evidence_ref,status
-mua bán vợt pickleball,CL-CORE,/mua-vot.html,PRIMARY_PAGE,BUILD_LAUNCH,/mua-vot.html,serp:p2p|passvot,PASS
-vợt pickleball cũ,CL-USED,/mua-vot.html,SECONDARY_SECTION,BUILD_LAUNCH,condition-filter,serp:passvot|2handland,PASS
-bán vợt pickleball cũ,CL-SELL,/dang-ban.html,PRIMARY_PAGE,BUILD_LAUNCH,/dang-ban.html,product-strategy,PASS
-mua vợt pickleball uy tín,CL-TRUST,/xac-thuc.html,PRIMARY_PAGE,BUILD_LAUNCH,/xac-thuc.html,serp:stockx|p2p,PASS
-định giá vợt pickleball,CL-VALUATION,/dinh-gia.html,PRIMARY_PAGE,BUILD_LAUNCH,/dinh-gia.html,product-strategy,PASS
-đổi vợt pickleball,CL-EXCHANGE,/doi-vot.html,PRIMARY_PAGE,BUILD_LAUNCH,/doi-vot.html,product-strategy,PASS
-ký gửi vợt pickleball,CL-CONSIGN,/ky-gui.html,PRIMARY_PAGE,BUILD_LAUNCH,/ky-gui.html,product-strategy,PASS
-cách kiểm tra vợt pickleball cũ,CL-GUIDE,/huong-dan.html,PRIMARY_PAGE,BUILD_LAUNCH,/huong-dan.html,serp:category-research,PASS
-vợt pickleball 14mm vs 16mm,CL-COMPARE,/huong-dan.html,SECONDARY_SECTION,BUILD_LAUNCH,14mm-16mm,serp:category-research,PASS
+mua bán vợt pickleball,C01,/mua-vot.html,PRIMARY_PAGE,BUILD_LAUNCH,/mua-vot.html,SERP-01,PASS
+vợt pickleball cũ,C02,/mua-vot.html,SECONDARY_SECTION,BUILD_LAUNCH,/mua-vot.html,SERP-01,PASS
+thanh lý vợt pickleball,C02,/mua-vot.html,SECONDARY_SECTION,BUILD_LAUNCH,/mua-vot.html,SERP-01,PASS
+bán vợt pickleball,C03,/ban-vot.html,PRIMARY_PAGE,BUILD_LAUNCH,/ban-vot.html,USER-REQ,PASS
+định giá vợt pickleball,C04,/dinh-gia.html,PRIMARY_PAGE,BUILD_LAUNCH,/dinh-gia.html,USER-REQ,PASS
+xác thực người bán vợt pickleball,C05,/xac-thuc.html,PRIMARY_PAGE,BUILD_LAUNCH,/xac-thuc.html,USER-REQ,PASS

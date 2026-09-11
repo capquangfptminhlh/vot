@@ -1,5 +1,6 @@
 decision: PASS
-observed_at: 2026-09-11T12:40:00+07:00
-fresh_source_families: 6
-source_count: 6
-research_changed_structure: true
+observed_at: 2026-09-11
+source_families: 4
+notes:
+  - Fresh research includes UX research and same-industry live references.
+  - Approved desktop/mobile demo is retained as the first implementation source of truth.

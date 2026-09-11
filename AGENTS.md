@@ -1,24 +1,27 @@
-# AGENTS.md — ChoVot Pickleball Project Bootstrap
+# AGENTS.md — ChoVot Pickleball
 
-This repository is governed by the central Website OS repository.
+Central Website OS governance:
+- source repo: `capquangfptminhlh/seo-web`
+- source ref: `main`
+- pinned source commit for this phase: `ef18d255150f3a77a7c7587feccf1ba7c419ad7b`
+- manifest: `governance/website-os.manifest.yml`
+- entrypoint: `AGENTS.md`
 
-- Source repo: `capquangfptminhlh/seo-web`
-- Source ref: `main`
-- Resolved source commit for this phase: `ef18d255150f3a77a7c7587feccf1ba7c419ad7b`
-- Manifest: `governance/website-os.manifest.yml`
-- Central entrypoint: `AGENTS.md`
-- Enforcement engine: `engine/website_os_engine.py`
-- Engine policy: `engine/policy.yml`
+Before substantive work, agents must load the central manifest, resolve the source commit, complete the mandatory read order, then apply the local rules below. Local rules may extend but not silently weaken central hard gates.
 
-Before substantive project work, load the central manifest and complete its `mandatory_read_order`. Local rules may extend but must not silently weaken central normative gates.
+## Project rules
+- Project: ChoVot Pickleball marketplace, Vietnam.
+- Core proposition: verified buyer + verified seller + transparent racket condition + protected transaction flow.
+- Both buyer and seller verification are product requirements. Never expose raw CCCD, bank account, selfie/liveness or other sensitive KYC data publicly.
+- The desktop + mobile demo approved by the user on 2026-09-11 is the visual source of truth for the first implementation.
+- Real KYC, bank verification, shipping, payment/escrow and dispute handling must not be represented as live until approved providers, legal/operational controls and production integrations exist.
+- Demo prices, seller names, ratings, order numbers and transaction counts are sample data and must be labelled as such.
+- SEO/AEO/GEO architecture is marketplace-first. Category, used-racket, product entity, valuation, verification and support intents require explicit canonical ownership.
+- Do not fabricate search volume, keyword difficulty, CPC, ranking or traffic potential.
 
-## Project-specific rules
-
-- Product: ChoVot Pickleball — verified marketplace for buying, selling, exchanging and consigning pickleball paddles in Vietnam.
-- Both buyer and seller trust are first-class product concepts. Public UI must never expose sensitive identity documents.
-- KYC, bank verification and escrow shown in the frontend are product states only until a compliant provider/backend is integrated; do not imply live financial custody.
-- Approved desktop + mobile demo from the 2026-09-11 design cycle is the visual source of truth for implementation.
-- Marketplace listing data in the current frontend MVP is demo data and must not be represented as live inventory.
-- Local SEO is not enabled for launch; avoid city/district doorway pages.
-
-Bootstrap failure state: `HOLD — WEBSITE OS BOOTSTRAP MISSING OR STALE`.
+## Bootstrap evidence
+- observed_at: 2026-09-11T12:19:00+07:00
+- source_commit_sha: ef18d255150f3a77a7c7587feccf1ba7c419ad7b
+- manifest_version: 1.3.0
+- mandatory_read_complete: YES
+- bootstrap_decision: PASS

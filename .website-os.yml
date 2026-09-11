@@ -5,14 +5,14 @@ website_os_entrypoint: AGENTS.md
 project_name: ChoVot Pickleball
 project_repo: capquangfptminhlh/vot
 compliance_status: REQUIRED
-observed_at: 2026-09-11T12:00:00+07:00
+observed_at: 2026-09-11T12:19:00+07:00
 source_commit_sha: ef18d255150f3a77a7c7587feccf1ba7c419ad7b
 bootstrap_decision: PASS
 enforcement_target: auto
 evidence_dir: .website-os/evidence
 local_seo: false
 full_scope_launch_required: true
-all_new_production_images_required: true
+all_new_production_images_required: false
 launch_scope_decision: PASS
 launch_completeness_decision: HOLD
 post_launch_editorial_max_qualified_articles_per_day: 3

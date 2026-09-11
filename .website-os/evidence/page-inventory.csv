@@ -1,12 +1,9 @@
 page_id,target_url,page_type,primary_keyword,primary_intent,primary_entity,indexability,launch_status,content_source,image_set_id,schema_types,internal_link_parent,mobile_required,status
-PAGE-001,/,homepage,chợ vợt pickleball,TRANSACTIONAL,ChoVot Pickleball,INDEXABLE,BUILD_LAUNCH,Product strategy,IMGSET-HOME,WebSite|Organization,,YES,READY
-PAGE-002,/mua-vot.html,category,mua bán vợt pickleball,TRANSACTIONAL,Vợt pickleball,INDEXABLE,BUILD_LAUNCH,SERP research,IMGSET-CATALOG,ItemList|BreadcrumbList,/,YES,READY
-PAGE-003,/dinh-gia.html,tool,định giá vợt pickleball,COMMERCIAL,Định giá,INDEXABLE,BUILD_LAUNCH,Product strategy,IMGSET-VALUATION,WebApplication,/,YES,READY
-PAGE-004,/xac-thuc.html,trust_page,xác thực người bán vợt,COMMERCIAL,Xác thực,INDEXABLE,BUILD_LAUNCH,Trust research,IMGSET-TRUST,WebPage|FAQPage,/,YES,READY
-PAGE-005,/doi-vot.html,service_landing,đổi vợt pickleball,TRANSACTIONAL,Đổi vợt,INDEXABLE,BUILD_LAUNCH,Product strategy,IMGSET-EXCHANGE,Service,/,YES,READY
-PAGE-006,/ky-gui.html,service_landing,ký gửi vợt pickleball,TRANSACTIONAL,Ký gửi,INDEXABLE,BUILD_LAUNCH,Product strategy,IMGSET-CONSIGN,Service,/,YES,READY
-PAGE-007,/huong-dan.html,guide,cách kiểm tra vợt pickleball cũ,INFORMATIONAL,Hướng dẫn,INDEXABLE,BUILD_LAUNCH,SERP research,IMGSET-GUIDE,Article|FAQPage,/,YES,READY
-PAGE-008,/dang-ban.html,seller_tool,bán vợt pickleball cũ,TRANSACTIONAL,Đăng bán,NOINDEX,BUILD_LAUNCH,Product workflow,IMGSET-SELL,WebApplication,/,YES,READY
-PAGE-009,/san-pham.html,product_demo,chi tiết vợt,TRANSACTIONAL,Listing demo,NOINDEX,BUILD_LAUNCH,Demo data,IMGSET-PRODUCT,Product,/mua-vot.html,YES,READY
-PAGE-010,/nguoi-ban.html,seller_profile_demo,người bán vợt uy tín,COMMERCIAL,Seller demo,NOINDEX,BUILD_LAUNCH,Demo data,IMGSET-SELLER,ProfilePage,/mua-vot.html,YES,READY
-PAGE-011,/don-hang.html,order_tool,theo dõi giao dịch,SUPPORT,Order demo,NOINDEX,BUILD_LAUNCH,Demo flow,IMGSET-ORDER,WebPage,/,YES,READY
+P01,/,homepage,chợ vợt pickleball,MIXED,ChoVot,INDEXABLE,BUILD_LAUNCH,project brief,IMG01,WebSite,,YES,PASS
+P02,/mua-vot.html,category_page,mua bán vợt pickleball,TRANSACTIONAL,Marketplace,INDEXABLE,BUILD_LAUNCH,SERP research,IMG02,ItemList,/,YES,PASS
+P03,/san-pham.html,product_page,vợt pickleball,TRANSACTIONAL,Paddle,INDEXABLE,BUILD_LAUNCH,product data,IMG03,Product,/mua-vot.html,YES,PASS
+P04,/ban-vot.html,seller_form,bán vợt pickleball,TRANSACTIONAL,Listing,INDEXABLE,BUILD_LAUNCH,project brief,IMG04,WebPage,/,YES,PASS
+P05,/xac-thuc.html,trust_page,xác thực người bán vợt pickleball,SUPPORT,Verification,INDEXABLE,BUILD_LAUNCH,project brief,IMG05,WebPage,/,YES,PASS
+P06,/nguoi-ban.html,profile_page,người bán vợt pickleball uy tín,NAVIGATIONAL,Seller,INDEXABLE,BUILD_LAUNCH,profile data,IMG06,ProfilePage,/mua-vot.html,YES,PASS
+P07,/dinh-gia.html,tool_page,định giá vợt pickleball,COMMERCIAL,Valuation,INDEXABLE,BUILD_LAUNCH,market data,IMG07,WebApplication,/,YES,PASS
+P08,/don-hang.html,account_page,theo dõi đơn,SUPPORT,Order,NOINDEX,NOINDEX_TOOL_OR_FILTER,transaction data,IMG08,WebPage,/,YES,PASS

@@ -1,4 +1,4 @@
-decision: PASS
-shortlisted_candidates: 5
-visually_distinguishable_without_brand_skin: true
-selected_candidate: C1
+decision: PASS_WITH_APPROVED_EXCEPTION
+observed_at: 2026-09-11
+reason: User explicitly approved the desktop and mobile ChoVot marketplace demo before repository implementation. The approved demo is locked for first build fidelity.
+review: Five structural alternatives were documented; candidate A is selected because it matches the approved demo and marketplace scanning task.

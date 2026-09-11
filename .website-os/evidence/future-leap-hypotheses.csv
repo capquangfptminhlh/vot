@@ -1,6 +1,4 @@
-candidate_id,hypothesis,user_value,feasibility,performance_risk,accessibility_risk,validation_plan,fallback
-C1,Trust Passport summarizes verification without exposing PII,Faster trust judgment,HIGH,LOW,LOW,Measure profile-to-buy conversion,Plain verification list
-C2,Condition-adjusted model price tape,Better price confidence,MEDIUM,LOW,LOW,Measure valuation engagement,Static ranges
-C3,Guided paddle finder by play style,Less choice overload,MEDIUM,LOW,LOW,Compare search-to-detail rate,Standard filters
-C4,Interpretable seller reputation graph,Transparent trust,MEDIUM,LOW,MEDIUM,Usability comprehension test,Plain stats list
-C5,Have-want exchange matching,Higher liquidity,MEDIUM,LOW,LOW,Match acceptance rate,Manual exchange listing
+hypothesis,user_value,feasibility,risk,validation_plan,status
+Trust score combining verified identity transaction history and listing quality,Faster buyer confidence,MEDIUM,False confidence if poorly weighted,A/B and dispute-rate analysis,HOLD
+Price intelligence from completed transactions,Better seller pricing,HIGH,Cold-start data sparsity,Enable after minimum transaction threshold,HOLD
+Condition verification photo checklist,Better secondhand transparency,HIGH,Seller friction,Measure completion vs dispute reduction,USE

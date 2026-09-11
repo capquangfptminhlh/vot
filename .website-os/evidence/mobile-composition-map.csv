@@ -1,7 +1,5 @@
-area,desktop,mobile,reason
-navigation,top navigation,bottom navigation plus compact top bar,Thumb reach
-hero,wide two-column trust hero,compressed vertical hero with search first,Reduce above-fold height
-catalog,6-column cards,2-column cards,Readable product density
-filters,horizontal desktop controls,horizontally scrollable chips,Touch efficiency
-product_action,inline buy/chat,sticky bottom buy/chat,Thumb reach
-seller_trust,sidebar trust card,full-width trust passport,Readability
+area,desktop,mobile,rationale,status
+Navigation,Top horizontal nav,Sticky five-item bottom navigation,Thumb reach,PASS
+Product discovery,Four-column cards,Two-column compact cards,Density without excessive scroll,PASS
+Filters,Sticky sidebar,Horizontal chips plus expandable filters,Screen width,PASS
+Sell CTA,Header action,Raised center bottom action,Marketplace supply priority,PASS

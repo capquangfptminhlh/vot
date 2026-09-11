@@ -1,6 +1,6 @@
-candidate_id,page_topology,navigation_model,information_flow,interaction_grammar,entry_hero_model,typography_architecture,motion_model,mobile_behavior,materially_different_axes,status
-C1,trust-led marketplace,top nav plus bottom mobile nav,search to listings trust process tools,search filter buy sell,search plus verification promise,bold retail,micro transitions,app-like bottom nav,8,PASS
-C2,market terminal,tabs watchlist,price movement to model to listing,sort watch compare,price tape,numeric data-led,ticker transitions,watchlist-first,8,PASS
-C3,guided journey,progress nav,questions to matches to detail,answer advance,question prompt,editorial question scale,step transitions,one-question-screen,8,PASS
-C4,reputation network,profile filter nav,seller trust to inventory to transaction,inspect follow message,reputation graph,profile data hierarchy,graph state,seller feed,8,PASS
-C5,exchange board,have want tabs,inventory pair to matches to proposal,select match propose,have versus want,dual-column labels,match animation,swipe matches,8,PASS
+candidate,page_topology,navigation,information_flow,interaction,entry_model,typography,motion,mobile_behavior,status
+A,marketplace-grid,top+bottom,search-to-list,filter-first,trust-hero,commercial,subtle,bottom-nav,SHORTLIST
+B,product-theater,rail,one-product-at-time,swipe,featured-object,editorial,slide,carousel,SHORTLIST
+C,trust-dashboard,workspace,status-first,task-actions,verification-score,data-dense,state-change,tabs,SHORTLIST
+D,community-feed,feed,activity-first,social-actions,live-market,conversational,feed-motion,bottom-tabs,SHORTLIST
+E,price-intelligence,data-space,chart-to-list,compare-first,market-index,analytical,micro-motion,sheet-filters,SHORTLIST

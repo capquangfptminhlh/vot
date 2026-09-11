@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /don-hang.html
+Sitemap: https://chovot.vn/sitemap.xml

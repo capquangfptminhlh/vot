@@ -1,7 +1,7 @@
 decision: PASS
-observed_at: 2026-09-11T12:30:00+07:00
-retained_keywords: 14
-p0_p1_clusters: 7
-local_seo: false
-fabricated_metrics: false
-notes: Quantitative search metrics remain UNKNOWN where unavailable.
+observed_at: 2026-09-11
+metrics_status: UNKNOWN where third-party volume/KD/CPC is unavailable
+basis:
+  - current Vietnam marketplace SERP evidence
+  - user-defined marketplace and two-sided verification requirements
+  - explicit canonical URL ownership

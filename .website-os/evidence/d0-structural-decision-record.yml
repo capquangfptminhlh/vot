@@ -1,11 +1,10 @@
-decision: PASS
-observed_at: 2026-09-11T12:50:00+07:00
-shortlisted_candidates: 5
-selected_candidate: C1
-silhouette_test: PASS
-structural_dna: PASS
-design_history_comparison: PASS
-future_leap_present: true
-desktop_composition_defined: true
-mobile_composition_defined: true
-approved_demo_lock: true
+decision: PASS_WITH_APPROVED_EXCEPTION
+observed_at: 2026-09-11
+selected_candidate: A
+exception: User-approved demo lock
+basis:
+  - approved desktop composition
+  - approved mobile composition
+  - fresh UI/UX research
+  - documented five structural candidates
+  - design history review

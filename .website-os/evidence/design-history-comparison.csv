@@ -1,6 +1,3 @@
-candidate_id,nearest_prior_design,changed_axes,similarity_estimate,decision,note
-C1,No prior ChoVot production site,8/8,0%,PASS,Approved demo is current-project source of truth
-C2,Generic marketplace dashboard,7/8,25%,PASS,Price tape is primary entry
-C3,Quiz finder product sites,6/8,30%,PASS,Guided decision flow before catalog
-C4,Reputation dashboards,7/8,20%,PASS,Identity graph is primary topology
-C5,Swap marketplace,7/8,20%,PASS,Two-sided matching topology
+design,comparison,result,status
+ChoVot approved demo,First ChoVot production design,No prior ChoVot implementation,PASS
+Website OS generic ecommerce family,Potential marketplace similarity,Approved demo lock takes precedence with documented exception,PASS

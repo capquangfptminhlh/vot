@@ -1,5 +1,5 @@
-pattern,saturation,decision,rationale
-generic split hero,HIGH,ALLOW_BY_APPROVED_DEMO_LOCK,Approved demo makes hero functional with search and verification
-generic bento,HIGH,REJECT,No marketplace job improvement
-3-column feature grid,HIGH,REJECT,Use transaction flow instead
-trust badge near listing,MEDIUM,USE,Functional risk reduction
+pattern,risk,decision,reason
+Generic SaaS bento,HIGH,REJECT,Not suited to marketplace shopping task
+Decorative glassmorphism,MEDIUM,REJECT,Weakens trust and readability
+Split hero,MEDIUM,ALLOW_EXCEPTION,User-approved demo lock requires it for first implementation
+Product grid,LOW,USE,Core marketplace scanning pattern

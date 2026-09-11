@@ -1,5 +1,4 @@
-role,family,weight,desktop_size,mobile_size,vietnamese_support,decision
-display,system-ui / Segoe UI / Arial,800,56px clamp,34px clamp,YES,USE
-section_heading,system-ui / Segoe UI / Arial,800,28px,22px,YES,USE
-body,system-ui / Segoe UI / Arial,400-600,16px,15px,YES,USE
-price,system-ui / Segoe UI / Arial,800,18px,17px,YES,USE
+role,font_strategy,vietnamese_support,responsive_behavior,status
+UI and body,System sans stack,YES,16px base with fluid headings,PASS
+Hero,System sans bold,YES,clamp 42-72 desktop and 42 mobile,PASS
+Data and price,System sans extra bold,YES,priority contrast,PASS

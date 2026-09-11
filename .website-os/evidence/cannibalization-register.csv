@@ -1,4 +1,4 @@
 risk_level,primary_intent,entity_name,urls,resolution,status
-HIGH,TRANSACTIONAL,mua vợt / vợt cũ,/mua-vot.html;/mua-vot.html?tinh-trang=cu,Single canonical category owner and filter states remain non-canonical UI,RESOLVED
-MEDIUM,TRANSACTIONAL,bán / ký gửi,/dang-ban.html;/ky-gui.html,Self-service sale versus consignment service are distinct intents,RESOLVED
-LOW,COMMERCIAL,trust,/xac-thuc.html;/huong-dan.html,/xac-thuc owns verification and guide links back,RESOLVED
+MEDIUM,TRANSACTIONAL,Vợt cũ,/mua-vot.html;/,Marketplace owns listing intent; homepage supports only,PASS
+LOW,TRANSACTIONAL,Đăng bán,/ban-vot.html;/,Seller page owns primary intent,PASS
+LOW,COMMERCIAL,Định giá,/dinh-gia.html;/ban-vot.html,Tool owns valuation; sell page links to tool,PASS
