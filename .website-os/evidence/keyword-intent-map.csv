@@ -1,0 +1,10 @@
+keyword,primary_intent,cluster_id,target_url
+mua bán vợt pickleball,TRANSACTIONAL,CL-CORE,/mua-vot.html
+vợt pickleball cũ,TRANSACTIONAL,CL-USED,/mua-vot.html
+bán vợt pickleball cũ,TRANSACTIONAL,CL-SELL,/dang-ban.html
+mua vợt pickleball uy tín,COMMERCIAL,CL-TRUST,/xac-thuc.html
+định giá vợt pickleball,COMMERCIAL,CL-VALUATION,/dinh-gia.html
+đổi vợt pickleball,TRANSACTIONAL,CL-EXCHANGE,/doi-vot.html
+ký gửi vợt pickleball,TRANSACTIONAL,CL-CONSIGN,/ky-gui.html
+cách kiểm tra vợt pickleball cũ,INFORMATIONAL,CL-GUIDE,/huong-dan.html
+vợt pickleball 14mm vs 16mm,COMPARISON,CL-COMPARE,/huong-dan.html

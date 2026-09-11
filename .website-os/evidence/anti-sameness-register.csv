@@ -1,0 +1,5 @@
+pattern,saturation,decision,rationale
+generic split hero,HIGH,ALLOW_BY_APPROVED_DEMO_LOCK,Approved demo makes hero functional with search and verification
+generic bento,HIGH,REJECT,No marketplace job improvement
+3-column feature grid,HIGH,REJECT,Use transaction flow instead
+trust badge near listing,MEDIUM,USE,Functional risk reduction

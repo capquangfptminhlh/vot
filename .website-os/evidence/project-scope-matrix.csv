@@ -1,0 +1,9 @@
+scope_id,cluster_id,cluster_name,primary_intent,entity_name,target_url,page_type,launch_status,reason,evidence_ref
+SCOPE-001,CL-CORE,Chợ mua bán vợt,TRANSACTIONAL,Chợ mua bán vợt,/mua-vot.html,category,BUILD_LAUNCH,Core marketplace scope,serp:p2p|passvot
+SCOPE-002,CL-USED,Vợt đã qua sử dụng,TRANSACTIONAL,Vợt cũ,/mua-vot.html,category,BUILD_LAUNCH,Core used-market scope,serp:passvot|2handland
+SCOPE-003,CL-SELL,Đăng bán,TRANSACTIONAL,Đăng bán,/dang-ban.html,tool,BUILD_LAUNCH,Supply-side workflow,product-strategy
+SCOPE-004,CL-TRUST,Xác thực,COMMERCIAL,Xác thực,/xac-thuc.html,trust_page,BUILD_LAUNCH,Core differentiator,serp:stockx|p2p
+SCOPE-005,CL-VALUATION,Định giá,COMMERCIAL,Định giá,/dinh-gia.html,tool,BUILD_LAUNCH,Pre-sale utility,product-strategy
+SCOPE-006,CL-EXCHANGE,Đổi vợt,TRANSACTIONAL,Đổi vợt,/doi-vot.html,service,BUILD_LAUNCH,Distinct marketplace job,product-strategy
+SCOPE-007,CL-CONSIGN,Ký gửi,TRANSACTIONAL,Ký gửi,/ky-gui.html,service,BUILD_LAUNCH,Distinct seller service,product-strategy
+SCOPE-008,CL-GUIDE,Hướng dẫn mua bán,INFORMATIONAL,Hướng dẫn,/huong-dan.html,guide,BUILD_LAUNCH,Trust support content,serp:category-research

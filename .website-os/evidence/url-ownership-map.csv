@@ -1,0 +1,11 @@
+primary_intent,entity_name,target_url,canonical_owner,indexability,status
+TRANSACTIONAL,Chợ mua bán vợt,/mua-vot.html,/mua-vot.html,INDEXABLE,PASS
+TRANSACTIONAL,Vợt cũ,/mua-vot.html?tinh-trang=cu,/mua-vot.html,INDEXABLE,PASS
+TRANSACTIONAL,Đăng bán,/dang-ban.html,/dang-ban.html,NOINDEX_TOOL,PASS
+COMMERCIAL,Xác thực,/xac-thuc.html,/xac-thuc.html,INDEXABLE,PASS
+COMMERCIAL,Vợt chính hãng,/mua-vot.html?loai=chinh-hang,/mua-vot.html,INDEXABLE,PASS
+COMMERCIAL,Định giá,/dinh-gia.html,/dinh-gia.html,INDEXABLE,PASS
+TRANSACTIONAL,Đổi vợt,/doi-vot.html,/doi-vot.html,INDEXABLE,PASS
+TRANSACTIONAL,Ký gửi,/ky-gui.html,/ky-gui.html,INDEXABLE,PASS
+INFORMATIONAL,Hướng dẫn,/huong-dan.html,/huong-dan.html,INDEXABLE,PASS
+COMPARISON,14mm vs 16mm,/huong-dan.html#14mm-16mm,/huong-dan.html,INDEXABLE,PASS

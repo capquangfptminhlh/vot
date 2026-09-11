@@ -1,0 +1,6 @@
+interaction,desktop_behavior,mobile_behavior,reason,source_ref
+search,hero search and catalog search,search directly below compact hero,Fast product discovery,figma|shopify
+filter,left/top filter chips,horizontal scroll filter chips,Thumb-friendly narrowing,figma
+buy,detail CTA,sticky bottom CTA,Keep primary action reachable,shopify
+sell,header CTA,center bottom-nav plus,Supply creation is primary job,passvot
+trust,verification panel and seller card,compact trust passport,Trust visible before transaction,stockx

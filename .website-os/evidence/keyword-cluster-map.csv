@@ -1,0 +1,11 @@
+cluster_id,cluster_name,primary_intent,pillar_or_hub_url,coverage_status
+CL-CORE,Chợ mua bán vợt,TRANSACTIONAL,/mua-vot.html,READY
+CL-USED,Vợt đã qua sử dụng,TRANSACTIONAL,/mua-vot.html,READY
+CL-SELL,Đăng bán và thanh lý,TRANSACTIONAL,/dang-ban.html,READY
+CL-TRUST,Xác thực và giao dịch an toàn,COMMERCIAL,/xac-thuc.html,READY
+CL-AUTH,Vợt chính hãng,COMMERCIAL,/mua-vot.html,READY
+CL-VALUATION,Định giá vợt,COMMERCIAL,/dinh-gia.html,READY
+CL-EXCHANGE,Đổi vợt,TRANSACTIONAL,/doi-vot.html,READY
+CL-CONSIGN,Ký gửi,TRANSACTIONAL,/ky-gui.html,READY
+CL-GUIDE,Hướng dẫn mua bán,INFORMATIONAL,/huong-dan.html,READY
+CL-COMPARE,So sánh thuộc tính vợt,COMPARISON,/huong-dan.html,READY

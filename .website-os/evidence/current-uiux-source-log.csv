@@ -1,0 +1,7 @@
+source_family,source_name,url,observed_at,pattern_observed,relevance,decision
+same_industry_marketplace,P2P Pickleball,https://p2ppickleball.vn/,2026-09-11,transaction flow and buyer inspection,HIGH,USE
+same_industry_marketplace,PassVot,https://www.passvot.com/mua-ban-va-thanh-ly-vot-pickleball,2026-09-11,fast listing and structured model database,HIGH,USE
+trust_marketplace,StockX Listings,https://stockx.com/help/articles/what-is-the-stockx-listings-marketplace,2026-09-11,identity verified sellers and item condition,HIGH,USE
+platform_primary,Webflow Ecommerce,https://help.webflow.com/hc/en-us/articles/33961345384339-Webflow-Ecommerce-overview,2026-09-11,product and checkout experience,HIGH,USE
+design_platform_primary,Figma Mobile First,https://www.figma.com/resource-library/mobile-first-design/,2026-09-11,mobile-first prioritization,HIGH,USE
+commerce_research,Shopify Ecommerce UX,https://www.shopify.com/blog/ecommerce-ux,2026-09-11,navigation product checkout and performance,HIGH,USE

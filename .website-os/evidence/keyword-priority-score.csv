@@ -1,0 +1,10 @@
+cluster_id,priority_score,priority_tier,reason,evidence_refs
+CL-CORE,93,P0,Core marketplace acquisition intent,serp:p2p|passvot
+CL-USED,90,P0,Primary supply and demand use case,serp:passvot|2handland
+CL-SELL,90,P0,Supply-side liquidity,serp:p2p|passvot
+CL-TRUST,88,P0,Differentiating trust proposition,serp:p2p|stockx
+CL-VALUATION,82,P1,Reduces listing friction,serp:2handland
+CL-EXCHANGE,78,P1,Distinct transaction job,product-strategy
+CL-CONSIGN,76,P1,Distinct seller service job,product-strategy
+CL-GUIDE,64,P2,Supports safe transactions,serp:category-research
+CL-COMPARE,58,P2,Supports paddle choice,serp:category-research

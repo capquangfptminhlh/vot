@@ -1,0 +1,5 @@
+role,family,weight,desktop_size,mobile_size,vietnamese_support,decision
+display,system-ui / Segoe UI / Arial,800,56px clamp,34px clamp,YES,USE
+section_heading,system-ui / Segoe UI / Arial,800,28px,22px,YES,USE
+body,system-ui / Segoe UI / Arial,400-600,16px,15px,YES,USE
+price,system-ui / Segoe UI / Arial,800,18px,17px,YES,USE

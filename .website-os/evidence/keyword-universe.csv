@@ -1,0 +1,15 @@
+keyword,primary_intent,cluster_id,target_url,observed_at,verification_status,status
+mua bán vợt pickleball,TRANSACTIONAL,CL-CORE,/mua-vot.html,2026-09-11,VERIFIED,RETAIN
+chợ vợt pickleball,TRANSACTIONAL,CL-CORE,/mua-vot.html,2026-09-11,VERIFIED,RETAIN
+vợt pickleball cũ,TRANSACTIONAL,CL-USED,/mua-vot.html,2026-09-11,VERIFIED,RETAIN
+bán vợt pickleball cũ,TRANSACTIONAL,CL-SELL,/dang-ban.html,2026-09-11,VERIFIED,RETAIN
+thanh lý vợt pickleball,TRANSACTIONAL,CL-SELL,/dang-ban.html,2026-09-11,VERIFIED,RETAIN
+mua vợt pickleball uy tín,COMMERCIAL,CL-TRUST,/xac-thuc.html,2026-09-11,VERIFIED,RETAIN
+xác thực người bán vợt,COMMERCIAL,CL-TRUST,/xac-thuc.html,2026-09-11,VERIFIED,RETAIN
+vợt pickleball chính hãng,COMMERCIAL,CL-AUTH,/mua-vot.html,2026-09-11,VERIFIED,RETAIN
+định giá vợt pickleball,COMMERCIAL,CL-VALUATION,/dinh-gia.html,2026-09-11,VERIFIED,RETAIN
+đổi vợt pickleball,TRANSACTIONAL,CL-EXCHANGE,/doi-vot.html,2026-09-11,VERIFIED,RETAIN
+ký gửi vợt pickleball,TRANSACTIONAL,CL-CONSIGN,/ky-gui.html,2026-09-11,VERIFIED,RETAIN
+cách kiểm tra vợt pickleball cũ,INFORMATIONAL,CL-GUIDE,/huong-dan.html,2026-09-11,VERIFIED,RETAIN
+vợt pickleball 14mm vs 16mm,COMPARISON,CL-COMPARE,/huong-dan.html,2026-09-11,VERIFIED,RETAIN
+giữ tiền trung gian mua vợt,COMMERCIAL,CL-TRUST,/xac-thuc.html,2026-09-11,VERIFIED,RETAIN

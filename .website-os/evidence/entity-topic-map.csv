@@ -1,0 +1,6 @@
+entity_type,entity_name,topic,source_of_truth,verification_status
+business,ChoVot Pickleball,verified pickleball marketplace,User-approved product concept,VERIFIED
+product_category,vợt pickleball,paddle marketplace,https://pickleball.vn/vot-pickleball,VERIFIED
+condition,vợt cũ,used paddles,https://2handland.com/vot-pickleball-cu/2,VERIFIED
+trust_mechanism,xác thực danh tính,verified marketplace trust,https://stockx.com/help/articles/what-is-the-stockx-listings-marketplace,VERIFIED
+transaction_mechanism,giữ tiền trung gian,buyer/seller protection,https://p2ppickleball.vn/,VERIFIED

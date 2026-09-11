@@ -1,0 +1,12 @@
+decision: LOCKED
+observed_at: 2026-09-11T12:50:00+07:00
+source: current_conversation_approved_desktop_and_mobile_demo
+implementation_contract:
+  - preserve green yellow white palette
+  - preserve trust-first hero and verification panel
+  - preserve listing cards and trusted seller proof
+  - preserve four-step transaction explanation
+  - preserve mobile bottom navigation and sticky actions
+allowed_deviations:
+  - original vector product illustrations instead of trademark photography
+  - system Vietnamese-capable fonts for speed and licensing simplicity

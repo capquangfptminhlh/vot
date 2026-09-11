@@ -1,0 +1,5 @@
+image_id,page_id,target_url,role,subject,prompt_or_brief,source_mode,required_width,required_height,format,alt_text,status
+IMG-001,PAGE-001,/,hero,three pickleball paddles and ball,Original vector hero without embedded text,NEW_GENERATED,1600,900,svg,Ba cây vợt pickleball và bóng trên nền sân,PASS
+IMG-002,PAGE-001,/,og_social,ChoVot Pickleball brand card,Original social card,NEW_GENERATED,1200,630,png,ChoVot Pickleball chợ vợt có xác thực,PASS
+IMG-003,PAGE-002,/mua-vot.html,product_entity,generic paddle set,Original vector product illustrations,NEW_GENERATED,800,800,svg,Các mẫu vợt pickleball minh họa,PASS
+IMG-004,PAGE-010,/nguoi-ban.html,trust_evidence,seller avatar,Original vector avatar,NEW_GENERATED,600,600,svg,Ảnh đại diện người bán đã xác minh,PASS
