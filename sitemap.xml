@@ -9,6 +9,7 @@
   <url><loc>https://chovot.vn/nguoi-ban.html</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
   <url><loc>https://chovot.vn/dinh-gia.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://chovot.vn/an-toan-giao-dich.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://chovot.vn/chinh-sach-dang-tin.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://chovot.vn/quy-che-hoat-dong.html</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://chovot.vn/dieu-khoan.html</loc><changefreq>monthly</changefreq><priority>0.4</priority></url>
   <url><loc>https://chovot.vn/chinh-sach-rieng-tu.html</loc><changefreq>monthly</changefreq><priority>0.4</priority></url>
