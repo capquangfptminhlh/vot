@@ -3,12 +3,12 @@ from __future__ import annotations
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urlparse
-import json, sys, xml.etree.ElementTree as ET
+import json, re, sys, xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_REQUIRED = [
     "index.html","mua-vot.html","thuong-hieu.html","san-pham.html","ban-vot.html","xac-thuc.html",
-    "nguoi-ban.html","dinh-gia.html","an-toan-giao-dich.html","quy-che-hoat-dong.html",
+    "nguoi-ban.html","dinh-gia.html","an-toan-giao-dich.html","chinh-sach-dang-tin.html","quy-che-hoat-dong.html",
     "dieu-khoan.html","chinh-sach-rieng-tu.html","faq.html","404.html",
     "hang/joola.html","model/joola-ben-johns-perseus-3s-16mm.html",
     "robots.txt","sitemap.xml","manifest.webmanifest","data/paddle-catalog.json",
@@ -111,10 +111,13 @@ def main():
         if token not in lifecycle: errors.append(f"schema lifecycle: missing {token}")
     for token in ["seller creates own draft","before insert or update","revoke update on public.profiles","get_public_seller_trust","listing_evidence","seller_feedback"]:
         if token not in trust: errors.append(f"schema trust: missing {token}")
-    if "grant insert(\n  seller_id" in trust and "nfc_available, status" in trust:
-        errors.append("schema trust: client INSERT must not grant listing status")
+    insert_grant=re.search(r"grant\s+insert\s*\((.*?)\)\s+on\s+public\.listings",trust,re.I|re.S)
+    if not insert_grant:
+        errors.append("schema trust: listings INSERT column grant missing")
+    elif re.search(r"\b(status|moderation_state|view_count|favorite_count|published_at|expires_at)\b",insert_grant.group(1),re.I):
+        errors.append("schema trust: client INSERT grants server-owned listing fields")
 
-    print("ChoVot launch audit v2.2")
+    print("ChoVot launch audit v2.3")
     print(f"HTML files checked: {len(html_files)}")
     for w in warnings: print("WARN ",w)
     for e in errors: print("ERROR",e)
