@@ -3,16 +3,17 @@ from __future__ import annotations
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urlparse
-import json, re, sys, xml.etree.ElementTree as ET
+import json, sys, xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_REQUIRED = [
-    "index.html","mua-vot.html","san-pham.html","ban-vot.html","xac-thuc.html",
+    "index.html","mua-vot.html","thuong-hieu.html","san-pham.html","ban-vot.html","xac-thuc.html",
     "nguoi-ban.html","dinh-gia.html","an-toan-giao-dich.html","quy-che-hoat-dong.html",
     "dieu-khoan.html","chinh-sach-rieng-tu.html","faq.html","404.html",
     "hang/joola.html","model/joola-ben-johns-perseus-3s-16mm.html",
     "robots.txt","sitemap.xml","manifest.webmanifest","data/paddle-catalog.json",
-    "supabase/migrations/0001_core.sql","docs/API_CONTRACT.md","admin/moderation.html"
+    "supabase/migrations/0001_core.sql","supabase/migrations/0002_lifecycle.sql",
+    "docs/API_CONTRACT.md","docs/SEO_URL_ARCHITECTURE.md","docs/STORAGE_SECURITY.md","admin/moderation.html"
 ]
 NOINDEX_PATHS = {"tin-nhan.html","404.html","admin/moderation.html"}
 STALE_CRITICAL = ["don-hang.html","giữ tiền trung gian","protected transaction flow","xác thực hai phía","verified buyer + verified seller"]
@@ -43,13 +44,10 @@ class P(HTMLParser):
 def local_target(ref:str, html:Path):
     if not ref or ref.startswith(("#","mailto:","tel:","javascript:")): return None
     u=urlparse(ref)
-    if u.scheme in ("http","https") or u.netloc: return None
-    if not u.path:return None
+    if u.scheme in ("http","https") or u.netloc or not u.path: return None
     return (html.parent/u.path).resolve()
 
-def url_for(rel:str):
-    if rel=="index.html": return "https://chovot.vn/"
-    return "https://chovot.vn/"+rel
+def url_for(rel:str): return "https://chovot.vn/" if rel=="index.html" else "https://chovot.vn/"+rel
 
 def main():
     errors=[]; warnings=[]
@@ -60,8 +58,7 @@ def main():
     for path in html_files:
         if any(p in {".git","node_modules"} for p in path.parts): continue
         rel=path.relative_to(ROOT).as_posix(); text=path.read_text(encoding="utf-8"); p=P(); p.feed(text); low=text.lower()
-        should_noindex=rel in NOINDEX_PATHS or rel.startswith("admin/")
-        has_noindex="noindex" in p.robots
+        should_noindex=rel in NOINDEX_PATHS or rel.startswith("admin/"); has_noindex="noindex" in p.robots
         if not p.title.strip(): errors.append(f"{rel}: missing title")
         if not p.desc: errors.append(f"{rel}: missing meta description")
         if p.h1!=1: errors.append(f"{rel}: expected 1 H1, found {p.h1}")
@@ -73,22 +70,20 @@ def main():
             if term.lower() in low: errors.append(f"{rel}: stale flow term: {term}")
         for phone in FAKE_CONTACT:
             if phone in text: errors.append(f"{rel}: fake contact: {phone}")
-        if "dữ liệu mẫu" in low or "bản demo" in low or "prototype" in low: warnings.append(f"{rel}: development wording remains")
+        if any(x in low for x in ("dữ liệu mẫu","bản demo","prototype")): warnings.append(f"{rel}: pre-production wording remains")
         for ref in p.hrefs+p.srcs:
             t=local_target(ref,path)
             if t is not None and not t.exists(): errors.append(f"{rel}: broken local ref {ref}")
 
-    # Catalog integrity: do not let unverified specs silently become facts.
     cat=ROOT/"data/paddle-catalog.json"
     if cat.exists():
         try:
             data=json.loads(cat.read_text(encoding="utf-8")); slugs=set()
             if len(data.get("brands",[]))<30: errors.append("catalog: expected at least 30 brand seeds")
             for m in data.get("models",[]):
-                slug=m.get("slug")
+                slug=m.get("slug"); status=m.get("verification_status")
                 if not slug or slug in slugs: errors.append(f"catalog: missing/duplicate model slug {slug}")
                 slugs.add(slug)
-                status=m.get("verification_status")
                 if status not in {"unverified","partial","verified"}: errors.append(f"catalog: invalid verification status {slug}")
                 if status=="verified" and not m.get("sources"): errors.append(f"catalog: verified model lacks source {slug}")
                 if status=="unverified":
@@ -111,11 +106,14 @@ def main():
             if any("tin-nhan.html" in u or "/admin/" in u for u in locs): errors.append("sitemap: private/internal URL present")
         except Exception as exc: errors.append(f"sitemap parse error: {exc}")
 
-    sql=(ROOT/"supabase/migrations/0001_core.sql").read_text(encoding="utf-8") if (ROOT/"supabase/migrations/0001_core.sql").exists() else ""
+    core=(ROOT/"supabase/migrations/0001_core.sql").read_text(encoding="utf-8") if (ROOT/"supabase/migrations/0001_core.sql").exists() else ""
+    lifecycle=(ROOT/"supabase/migrations/0002_lifecycle.sql").read_text(encoding="utf-8") if (ROOT/"supabase/migrations/0002_lifecycle.sql").exists() else ""
     for token in ["enable row level security","verified seller creates listing","moderation_actions"]:
-        if token not in sql: errors.append(f"schema: missing security primitive {token}")
+        if token not in core: errors.append(f"schema core: missing security primitive {token}")
+    for token in ["handle_new_user","enforce_listing_publish_state","public_seller_trust","set_updated_at"]:
+        if token not in lifecycle: errors.append(f"schema lifecycle: missing primitive {token}")
 
-    print("ChoVot launch audit v2")
+    print("ChoVot launch audit v2.1")
     print(f"HTML files checked: {len(html_files)}")
     for w in warnings: print("WARN ",w)
     for e in errors: print("ERROR",e)
