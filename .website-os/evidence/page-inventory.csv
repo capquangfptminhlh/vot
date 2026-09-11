@@ -6,4 +6,3 @@ P04,/ban-vot.html,seller_form,bán vợt pickleball,TRANSACTIONAL,Listing,INDEXA
 P05,/xac-thuc.html,trust_page,xác thực người bán vợt pickleball,SUPPORT,Verification,INDEXABLE,BUILD_LAUNCH,project brief,IMG05,WebPage,/,YES,PASS
 P06,/nguoi-ban.html,profile_page,người bán vợt pickleball uy tín,NAVIGATIONAL,Seller,INDEXABLE,BUILD_LAUNCH,profile data,IMG06,ProfilePage,/mua-vot.html,YES,PASS
 P07,/dinh-gia.html,tool_page,định giá vợt pickleball,COMMERCIAL,Valuation,INDEXABLE,BUILD_LAUNCH,market data,IMG07,WebApplication,/,YES,PASS
-P08,/don-hang.html,account_page,theo dõi đơn,SUPPORT,Order,NOINDEX,NOINDEX_TOOL_OR_FILTER,transaction data,IMG08,WebPage,/,YES,PASS

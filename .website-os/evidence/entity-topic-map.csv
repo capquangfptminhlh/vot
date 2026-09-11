@@ -2,4 +2,4 @@ entity_type,entity_name,topic,source_of_truth,verification_status
 marketplace,ChoVot Pickleball,buy sell verified paddles,project requirements,VERIFIED
 product_category,Vợt pickleball cũ,secondhand marketplace,current SERP evidence,VERIFIED
 trust_system,Buyer and seller verification,identity trust,user requirement,VERIFIED
-transaction_flow,Protected transaction,escrow-like flow,product concept,UNVERIFIED
+transaction_flow,Direct buyer-seller contact,escrow-like flow,product concept,UNVERIFIED

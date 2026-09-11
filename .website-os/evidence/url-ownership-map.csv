@@ -5,4 +5,3 @@ TRANSACTIONAL,Đăng bán vợt,/ban-vot.html,YES,INDEXABLE,PASS
 COMMERCIAL,Định giá vợt,/dinh-gia.html,YES,INDEXABLE,PASS
 SUPPORT,Xác thực tài khoản,/xac-thuc.html,YES,INDEXABLE,PASS
 NAVIGATIONAL,Hồ sơ người bán,/nguoi-ban.html,YES,INDEXABLE,PASS
-SUPPORT,Theo dõi đơn,/don-hang.html,YES,NOINDEX,PASS

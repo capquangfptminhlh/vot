@@ -3,7 +3,6 @@ S01,C00,Homepage,MIXED,ChoVot,/,homepage,BUILD_LAUNCH,Brand and trust entry,USER
 S02,C01,Marketplace vợt,TRANSACTIONAL,Marketplace,/mua-vot.html,category_page,BUILD_LAUNCH,Primary buyer path,SERP-01
 S03,C06,Product detail,TRANSACTIONAL,Paddle entity,/san-pham.html,product_page,BUILD_LAUNCH,Product evaluation and conversion,USER-REQ
 S04,C03,Đăng bán,TRANSACTIONAL,Seller listing,/ban-vot.html,seller_form,BUILD_LAUNCH,Supply acquisition,USER-REQ
-S05,C05,Xác thực,SUPPORT,Trust profile,/xac-thuc.html,trust_page,BUILD_LAUNCH,Required two-sided verification,USER-REQ
+S05,C05,Xác thực,SUPPORT,Trust profile,/xac-thuc.html,trust_page,BUILD_LAUNCH,Required seller verification,USER-REQ
 S06,C07,Người bán,NAVIGATIONAL,Seller profile,/nguoi-ban.html,profile_page,BUILD_LAUNCH,Public trust evidence,USER-REQ
 S07,C04,Định giá,COMMERCIAL,Valuation tool,/dinh-gia.html,tool_page,BUILD_LAUNCH,Seller support,P1
-S08,C08,Đơn hàng,SUPPORT,Protected transaction,/don-hang.html,account_page,NOINDEX_TOOL_OR_FILTER,Private transaction state,USER-REQ
