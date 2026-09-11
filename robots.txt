@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
 Disallow: /tin-nhan.html
+Disallow: /admin/
 Sitemap: https://chovot.vn/sitemap.xml

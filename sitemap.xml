@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://chovot.vn/</loc></url>
-  <url><loc>https://chovot.vn/mua-vot.html</loc></url>
-  <url><loc>https://chovot.vn/san-pham.html</loc></url>
-  <url><loc>https://chovot.vn/ban-vot.html</loc></url>
-  <url><loc>https://chovot.vn/xac-thuc.html</loc></url>
-  <url><loc>https://chovot.vn/nguoi-ban.html</loc></url>
-  <url><loc>https://chovot.vn/dinh-gia.html</loc></url>
-  <url><loc>https://chovot.vn/an-toan-giao-dich.html</loc></url>
-  <url><loc>https://chovot.vn/quy-che-hoat-dong.html</loc></url>
-  <url><loc>https://chovot.vn/dieu-khoan.html</loc></url>
-  <url><loc>https://chovot.vn/chinh-sach-rieng-tu.html</loc></url>
+  <url><loc>https://chovot.vn/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>https://chovot.vn/mua-vot.html</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://chovot.vn/san-pham.html</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://chovot.vn/ban-vot.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://chovot.vn/xac-thuc.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://chovot.vn/nguoi-ban.html</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://chovot.vn/dinh-gia.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://chovot.vn/an-toan-giao-dich.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://chovot.vn/quy-che-hoat-dong.html</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://chovot.vn/dieu-khoan.html</loc><changefreq>monthly</changefreq><priority>0.4</priority></url>
+  <url><loc>https://chovot.vn/chinh-sach-rieng-tu.html</loc><changefreq>monthly</changefreq><priority>0.4</priority></url>
+  <url><loc>https://chovot.vn/faq.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://chovot.vn/hang/joola.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://chovot.vn/model/joola-ben-johns-perseus-3s-16mm.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
 </urlset>

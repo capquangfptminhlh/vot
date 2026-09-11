@@ -1,0 +1,91 @@
+{
+  "version": "2026-09-11",
+  "policy": {
+    "verified_means": "Only fields backed by a cited manufacturer/distributor source are marked verified.",
+    "unverified_fields_must_not_be_published_as_fact": true
+  },
+  "brands": [
+    "JOOLA","Selkirk","Paddletek","Gearbox","CRBN","Franklin","Six Zero","Vatic Pro","Volair","ProXR","Engage","Diadem","ProKennex","Electrum","Vulcan","ONIX","HEAD","Wilson","Babolat","Gamma","Adidas","Ronbus","Bread & Butter","Honolulu Pickleball Company","Spartus","Neonic","Chorus","Proton","Pickleball Apes","11SIX24","Thrive","Hudef","Sypik","Facolos","Kamito","Zocker","VNP","PKV"
+  ],
+  "models": [
+    {
+      "slug": "joola-ben-johns-perseus-3s-16mm",
+      "brand": "JOOLA",
+      "name": "Ben Johns Perseus 3S 16mm",
+      "generation": "3S",
+      "thickness_mm": 16,
+      "surface": "Charged Carbon",
+      "average_weight_oz": 8,
+      "length_in": 16.5,
+      "width_in": 7.5,
+      "grip_length_in": 5.5,
+      "grip_circumference_in": 4.25,
+      "approval": "UPA-A",
+      "nfc": true,
+      "verification_status": "verified",
+      "verified_at": "2026-09-11",
+      "sources": ["https://vot.pickleball.vn/san-pham/joola-ben-johns-perseus-3s-16mm.html"]
+    },
+    {
+      "slug": "joola-perseus-mod-ta-15-16mm",
+      "brand": "JOOLA",
+      "name": "Perseus MOD TA-15 16mm",
+      "thickness_mm": 16,
+      "surface": "Carbon Friction",
+      "core": "Propulsion",
+      "average_weight_oz": 8,
+      "length_in": 16.5,
+      "width_in": 7.5,
+      "grip_length_in": 5.5,
+      "grip_circumference_in": 4.25,
+      "approval": "USAP",
+      "nfc": true,
+      "verification_status": "verified",
+      "verified_at": "2026-09-11",
+      "sources": ["https://vot.pickleball.vn/san-pham/joola-perseus-16mm-mod-ta-15-pro-player-edition.html"]
+    },
+    {
+      "slug": "joola-perseus-pro-iv-16mm-vietnam-colorway",
+      "brand": "JOOLA",
+      "name": "Perseus Pro IV 16mm - Vietnam Colorway",
+      "thickness_mm": 16,
+      "verification_status": "partial",
+      "verified_at": "2026-09-11",
+      "sources": ["https://vot.pickleball.vn/"]
+    },
+    {
+      "slug": "joola-hyperion-pro-iv-16mm-vietnam-colorway",
+      "brand": "JOOLA",
+      "name": "Hyperion Pro IV 16mm - Vietnam Colorway",
+      "thickness_mm": 16,
+      "verification_status": "partial",
+      "verified_at": "2026-09-11",
+      "sources": ["https://vot.pickleball.vn/"]
+    },
+    {
+      "slug": "joola-scorpeus-pro-iv-14mm-vietnam-colorway",
+      "brand": "JOOLA",
+      "name": "Scorpeus Pro IV 14mm - Vietnam Colorway",
+      "thickness_mm": 14,
+      "verification_status": "partial",
+      "verified_at": "2026-09-11",
+      "sources": ["https://vot.pickleball.vn/"]
+    },
+    {
+      "slug": "selkirk-boomstik-16mm",
+      "brand": "Selkirk",
+      "name": "Boomstik 16mm",
+      "thickness_mm": 16,
+      "verification_status": "unverified",
+      "sources": []
+    },
+    {
+      "slug": "facolos-nexx-16mm",
+      "brand": "Facolos",
+      "name": "NEXX 16mm",
+      "thickness_mm": 16,
+      "verification_status": "unverified",
+      "sources": []
+    }
+  ]
+}

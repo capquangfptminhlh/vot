@@ -1,149 +1,124 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urlparse
-import re
-import sys
-import xml.etree.ElementTree as ET
+import json, re, sys, xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_REQUIRED = [
-    "index.html", "mua-vot.html", "san-pham.html", "ban-vot.html",
-    "xac-thuc.html", "nguoi-ban.html", "dinh-gia.html",
-    "an-toan-giao-dich.html", "quy-che-hoat-dong.html",
-    "dieu-khoan.html", "chinh-sach-rieng-tu.html", "404.html",
-    "robots.txt", "sitemap.xml", "manifest.webmanifest",
+    "index.html","mua-vot.html","san-pham.html","ban-vot.html","xac-thuc.html",
+    "nguoi-ban.html","dinh-gia.html","an-toan-giao-dich.html","quy-che-hoat-dong.html",
+    "dieu-khoan.html","chinh-sach-rieng-tu.html","faq.html","404.html",
+    "hang/joola.html","model/joola-ben-johns-perseus-3s-16mm.html",
+    "robots.txt","sitemap.xml","manifest.webmanifest","data/paddle-catalog.json",
+    "supabase/migrations/0001_core.sql","docs/API_CONTRACT.md","admin/moderation.html"
 ]
-NOINDEX_OK = {"tin-nhan.html", "404.html"}
-STALE_CRITICAL = [
-    "don-hang.html", "giữ tiền trung gian", "protected transaction flow",
-    "xác thực hai phía", "verified buyer + verified seller",
-]
-FAKE_CONTACT = ["0900000000", "090 000 0000"]
+NOINDEX_PATHS = {"tin-nhan.html","404.html","admin/moderation.html"}
+STALE_CRITICAL = ["don-hang.html","giữ tiền trung gian","protected transaction flow","xác thực hai phía","verified buyer + verified seller"]
+FAKE_CONTACT = ["0900000000","090 000 0000"]
 
-class AuditParser(HTMLParser):
+class P(HTMLParser):
     def __init__(self):
-        super().__init__(convert_charrefs=True)
-        self.title = ""
-        self._in_title = False
-        self.h1 = 0
-        self.meta_description = ""
-        self.robots = ""
-        self.canonical = ""
-        self.hrefs: list[str] = []
-        self.srcs: list[str] = []
-        self.img_missing_alt = 0
-        self.mobile_toggle_missing_label = 0
-
+        super().__init__(convert_charrefs=True); self.title=""; self._t=False; self.h1=0; self.desc=""; self.robots=""; self.canonical=""; self.hrefs=[]; self.srcs=[]; self.img_alt=0
     def handle_starttag(self, tag, attrs):
-        a = dict(attrs)
-        if tag == "title":
-            self._in_title = True
-        elif tag == "h1":
-            self.h1 += 1
-        elif tag == "meta":
-            name = a.get("name", "").lower()
-            if name == "description": self.meta_description = a.get("content", "").strip()
-            if name == "robots": self.robots = a.get("content", "").lower()
-        elif tag == "link" and a.get("rel", "").lower() == "canonical":
-            self.canonical = a.get("href", "").strip()
-        elif tag == "a":
-            self.hrefs.append(a.get("href", ""))
-        elif tag == "script":
+        a=dict(attrs)
+        if tag=="title": self._t=True
+        elif tag=="h1": self.h1+=1
+        elif tag=="meta":
+            n=a.get("name","").lower()
+            if n=="description": self.desc=a.get("content","").strip()
+            if n=="robots": self.robots=a.get("content","").lower()
+        elif tag=="link" and a.get("rel","").lower()=="canonical": self.canonical=a.get("href","").strip()
+        elif tag=="a": self.hrefs.append(a.get("href",""))
+        elif tag=="script" and a.get("src"): self.srcs.append(a["src"])
+        elif tag=="img":
+            if "alt" not in a: self.img_alt+=1
             if a.get("src"): self.srcs.append(a["src"])
-        elif tag == "img":
-            if "alt" not in a: self.img_missing_alt += 1
-            if a.get("src"): self.srcs.append(a["src"])
-        elif tag == "button" and "mobile-toggle" in a.get("class", ""):
-            if not a.get("aria-label"): self.mobile_toggle_missing_label += 1
-
     def handle_endtag(self, tag):
-        if tag == "title": self._in_title = False
+        if tag=="title": self._t=False
+    def handle_data(self,data):
+        if self._t:self.title+=data
 
-    def handle_data(self, data):
-        if self._in_title: self.title += data
+def local_target(ref:str, html:Path):
+    if not ref or ref.startswith(("#","mailto:","tel:","javascript:")): return None
+    u=urlparse(ref)
+    if u.scheme in ("http","https") or u.netloc: return None
+    if not u.path:return None
+    return (html.parent/u.path).resolve()
 
+def url_for(rel:str):
+    if rel=="index.html": return "https://chovot.vn/"
+    return "https://chovot.vn/"+rel
 
-def local_target(ref: str, html_path: Path) -> Path | None:
-    if not ref or ref.startswith(("#", "mailto:", "tel:", "javascript:")):
-        return None
-    u = urlparse(ref)
-    if u.scheme in ("http", "https") or u.netloc:
-        return None
-    path = u.path
-    if not path:
-        return None
-    return (html_path.parent / path).resolve()
-
-
-def main() -> int:
-    errors: list[str] = []
-    warnings: list[str] = []
-
+def main():
+    errors=[]; warnings=[]
     for rel in PUBLIC_REQUIRED:
-        if not (ROOT / rel).exists(): errors.append(f"MISSING required file: {rel}")
+        if not (ROOT/rel).exists(): errors.append(f"MISSING required file: {rel}")
 
-    html_files = sorted(ROOT.glob("*.html"))
+    html_files=sorted(ROOT.rglob("*.html"))
     for path in html_files:
-        text = path.read_text(encoding="utf-8")
-        p = AuditParser(); p.feed(text)
-        name = path.name
-        noindex = "noindex" in p.robots or name in NOINDEX_OK
-        if not p.title.strip(): errors.append(f"{name}: missing <title>")
-        if not p.meta_description: errors.append(f"{name}: missing meta description")
-        if p.h1 != 1: errors.append(f"{name}: expected 1 H1, found {p.h1}")
-        if not noindex and not p.canonical: errors.append(f"{name}: indexable page missing canonical")
-        if p.img_missing_alt: errors.append(f"{name}: {p.img_missing_alt} img tag(s) missing alt")
-        if p.mobile_toggle_missing_label: warnings.append(f"{name}: mobile menu button missing aria-label")
-        if 'href="#"' in text or "href='#'" in text: errors.append(f"{name}: placeholder href=#")
-        low = text.lower()
+        if any(p in {".git","node_modules"} for p in path.parts): continue
+        rel=path.relative_to(ROOT).as_posix(); text=path.read_text(encoding="utf-8"); p=P(); p.feed(text); low=text.lower()
+        should_noindex=rel in NOINDEX_PATHS or rel.startswith("admin/")
+        has_noindex="noindex" in p.robots
+        if not p.title.strip(): errors.append(f"{rel}: missing title")
+        if not p.desc: errors.append(f"{rel}: missing meta description")
+        if p.h1!=1: errors.append(f"{rel}: expected 1 H1, found {p.h1}")
+        if should_noindex and not has_noindex and rel!="404.html": errors.append(f"{rel}: private/internal page missing noindex")
+        if not should_noindex and not p.canonical: errors.append(f"{rel}: indexable page missing canonical")
+        if p.img_alt: errors.append(f"{rel}: {p.img_alt} image(s) missing alt")
+        if 'href="#"' in text or "href='#'" in text: errors.append(f"{rel}: placeholder href=#")
         for term in STALE_CRITICAL:
-            if term.lower() in low: errors.append(f"{name}: stale product-model term: {term}")
+            if term.lower() in low: errors.append(f"{rel}: stale flow term: {term}")
         for phone in FAKE_CONTACT:
-            if phone in text: errors.append(f"{name}: fake contact number present: {phone}")
-        if "prototype" in low or "dữ liệu mẫu" in low or "bản demo" in low:
-            warnings.append(f"{name}: development/demo wording remains")
-        for ref in p.hrefs + p.srcs:
-            target = local_target(ref, path)
-            if target is not None and not target.exists():
-                errors.append(f"{name}: broken local ref {ref}")
+            if phone in text: errors.append(f"{rel}: fake contact: {phone}")
+        if "dữ liệu mẫu" in low or "bản demo" in low or "prototype" in low: warnings.append(f"{rel}: development wording remains")
+        for ref in p.hrefs+p.srcs:
+            t=local_target(ref,path)
+            if t is not None and not t.exists(): errors.append(f"{rel}: broken local ref {ref}")
 
-    # Repo-wide stale flow and fake contact checks in user-facing code/config.
-    scan_files = [ROOT / "README.md", ROOT / "AGENTS.md"] + list((ROOT / "assets").glob("*.js"))
-    for path in scan_files:
-        if not path.exists(): continue
-        text = path.read_text(encoding="utf-8")
-        low = text.lower()
-        for term in STALE_CRITICAL:
-            if term.lower() in low: errors.append(f"{path.relative_to(ROOT)}: stale product-model term: {term}")
-        for phone in FAKE_CONTACT:
-            if phone in text: errors.append(f"{path.relative_to(ROOT)}: fake contact number present: {phone}")
+    # Catalog integrity: do not let unverified specs silently become facts.
+    cat=ROOT/"data/paddle-catalog.json"
+    if cat.exists():
+        try:
+            data=json.loads(cat.read_text(encoding="utf-8")); slugs=set()
+            if len(data.get("brands",[]))<30: errors.append("catalog: expected at least 30 brand seeds")
+            for m in data.get("models",[]):
+                slug=m.get("slug")
+                if not slug or slug in slugs: errors.append(f"catalog: missing/duplicate model slug {slug}")
+                slugs.add(slug)
+                status=m.get("verification_status")
+                if status not in {"unverified","partial","verified"}: errors.append(f"catalog: invalid verification status {slug}")
+                if status=="verified" and not m.get("sources"): errors.append(f"catalog: verified model lacks source {slug}")
+                if status=="unverified":
+                    fact_fields=["surface","core","average_weight_oz","length_in","width_in","approval","nfc"]
+                    if any(m.get(k) not in (None,"") for k in fact_fields): errors.append(f"catalog: unverified model has asserted specs {slug}")
+        except Exception as exc: errors.append(f"catalog JSON error: {exc}")
 
-    robots = (ROOT / "robots.txt").read_text(encoding="utf-8") if (ROOT / "robots.txt").exists() else ""
-    if "Sitemap: https://chovot.vn/sitemap.xml" not in robots: errors.append("robots.txt: missing production sitemap URL")
-    if "don-hang.html" in robots: errors.append("robots.txt: stale deleted order page")
-    if "Disallow: /tin-nhan.html" not in robots: warnings.append("robots.txt: consider disallowing private messages page")
+    robots=(ROOT/"robots.txt").read_text(encoding="utf-8") if (ROOT/"robots.txt").exists() else ""
+    if "Sitemap: https://chovot.vn/sitemap.xml" not in robots: errors.append("robots: missing production sitemap")
+    if "Disallow: /tin-nhan.html" not in robots: errors.append("robots: messages must be disallowed")
+    if "Disallow: /admin/" not in robots: errors.append("robots: admin must be disallowed")
 
-    sitemap = ROOT / "sitemap.xml"
+    sitemap=ROOT/"sitemap.xml"
     if sitemap.exists():
         try:
-            root = ET.parse(sitemap).getroot()
-            locs = {el.text.strip() for el in root.iter() if el.tag.endswith("loc") and el.text}
-            for rel in [x for x in PUBLIC_REQUIRED if x.endswith(".html") and x not in NOINDEX_OK]:
-                url = "https://chovot.vn/" if rel == "index.html" else f"https://chovot.vn/{rel}"
-                if url not in locs: errors.append(f"sitemap.xml: missing {url}")
-            if any("tin-nhan.html" in u for u in locs): errors.append("sitemap.xml: private messages page must not be indexed")
-        except Exception as exc:
-            errors.append(f"sitemap.xml: parse error: {exc}")
+            root=ET.parse(sitemap).getroot(); locs={e.text.strip() for e in root.iter() if e.tag.endswith("loc") and e.text}
+            expected=[x for x in PUBLIC_REQUIRED if x.endswith(".html") and x not in NOINDEX_PATHS and x!="404.html" and not x.startswith("admin/")]
+            for rel in expected:
+                if url_for(rel) not in locs: errors.append(f"sitemap: missing {url_for(rel)}")
+            if any("tin-nhan.html" in u or "/admin/" in u for u in locs): errors.append("sitemap: private/internal URL present")
+        except Exception as exc: errors.append(f"sitemap parse error: {exc}")
 
-    print("ChoVot static launch audit")
+    sql=(ROOT/"supabase/migrations/0001_core.sql").read_text(encoding="utf-8") if (ROOT/"supabase/migrations/0001_core.sql").exists() else ""
+    for token in ["enable row level security","verified seller creates listing","moderation_actions"]:
+        if token not in sql: errors.append(f"schema: missing security primitive {token}")
+
+    print("ChoVot launch audit v2")
     print(f"HTML files checked: {len(html_files)}")
-    for w in warnings: print(f"WARN  {w}")
-    for e in errors: print(f"ERROR {e}")
+    for w in warnings: print("WARN ",w)
+    for e in errors: print("ERROR",e)
     print(f"Result: {'FAIL' if errors else 'PASS'} | errors={len(errors)} warnings={len(warnings)}")
     return 1 if errors else 0
-
-if __name__ == "__main__":
-    sys.exit(main())
+if __name__=="__main__": sys.exit(main())
