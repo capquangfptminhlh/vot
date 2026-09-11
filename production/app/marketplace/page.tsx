@@ -1,0 +1,18 @@
+import type { Metadata } from 'next'
+import Link from 'next/link'
+import { createSupabaseServerClient, hasSupabaseEnv } from '@/lib/supabase/server'
+
+export const metadata:Metadata={title:'Mua bán vợt Pickleball mới & cũ',description:'Marketplace chuyên vợt pickleball: lọc theo tình trạng, độ dày, giá và hồ sơ người bán đã xác thực.',alternates:{canonical:'/marketplace'}}
+export const revalidate=60
+
+type Listing={id:string;slug:string;title:string;brand:string;condition:string;thickness_mm:number|null;price:number;location:string|null;paddle_verified:boolean}
+const demo:Listing[]=[
+{id:'1',slug:'apex-carbon-control-16mm',title:'Apex Carbon Control 16mm',brand:'Apex',condition:'new',thickness_mm:16,price:2890000,location:'TP.HCM',paddle_verified:true},
+{id:'2',slug:'nova-hybrid-pro-14mm',title:'Nova Hybrid Pro 14mm',brand:'Nova',condition:'like_new',thickness_mm:14,price:2450000,location:'Hà Nội',paddle_verified:false},
+{id:'3',slug:'volt-power-max-16mm',title:'Volt Power Max 16mm',brand:'Volt',condition:'used',thickness_mm:16,price:1990000,location:'Toàn quốc',paddle_verified:false},
+]
+
+async function getListings(){if(!hasSupabaseEnv())return demo;const sb=await createSupabaseServerClient();const {data,error}=await sb.from('listings').select('id,slug,title,brand,condition,thickness_mm,price,location,paddle_verified').eq('status','active').order('created_at',{ascending:false}).limit(24);if(error)return demo;return (data||[]) as Listing[]}
+const conditionLabel=(c:string)=>({new:'Mới 100%',like_new:'Like new',excellent:'Còn rất tốt',used:'Đã sử dụng'}[c]||c)
+
+export default async function MarketplacePage({searchParams}:{searchParams:Promise<{q?:string}>}){const {q=''}=await searchParams;let items=await getListings();if(q){const t=q.toLowerCase();items=items.filter(x=>`${x.title} ${x.brand}`.toLowerCase().includes(t))}return <main><section className="pageHero"><div className="container"><span className="eyebrow">Marketplace có xác thực</span><h1>Mua vợt Pickleball</h1><p>Tìm theo model, tình trạng và mức giá. Mỗi tin có URL riêng để chia sẻ, theo dõi và lập chỉ mục.</p><form action="/marketplace" style={{display:'flex',gap:10,maxWidth:720,marginTop:20}}><input name="q" defaultValue={q} placeholder="Tìm model, thương hiệu..." style={{flex:1,padding:'13px 16px',border:'1px solid var(--line)',borderRadius:999,font:'inherit'}}/><button className="btn primary">Tìm</button></form></div></section><section className="section"><div className="container"><div className="sectionHead"><div><h2>{items.length} vợt phù hợp</h2><p>Dữ liệu thật sẽ lấy từ Supabase khi production env được cấu hình.</p></div><Link className="btn lime" href="/dang-ban">＋ Đăng bán</Link></div><div className="grid grid4">{items.map((x,i)=><Link className="productCard" key={x.id} href={`/san-pham/${x.slug}`}><div className="productMedia"><div className="paddle" style={{borderColor:['#dfff4f','#68b8ff','#ff79b8','#eee'][i%4]}}><span style={{position:'absolute',inset:0,display:'grid',placeItems:'center',color:'#fff',fontWeight:900,fontSize:12}}>{x.brand.slice(0,6).toUpperCase()}</span></div></div><div className="productBody"><div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:8}}><span className="eyebrow">✓ Người bán xác thực</span>{x.paddle_verified&&<span className="eyebrow">🏓 Vợt kiểm định</span>}</div><b>{x.title}</b><p style={{color:'var(--muted)',margin:'5px 0'}}>{conditionLabel(x.condition)}{x.thickness_mm?` • ${x.thickness_mm}mm`:''}{x.location?` • ${x.location}`:''}</p><div className="price">{Number(x.price).toLocaleString('vi-VN')} đ</div></div></Link>)}</div></div></section></main>}
