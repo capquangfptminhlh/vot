@@ -3,6 +3,20 @@ const qa=(s,c=document)=>[...c.querySelectorAll(s)];
 const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const finePointer=window.matchMedia('(hover:hover) and (pointer:fine)').matches;
 
+// Complete shared shell on pages that intentionally keep HTML minimal.
+if(!q('.footer')){
+  const footer=document.createElement('footer');
+  footer.className='footer';
+  footer.innerHTML='<div class="container footer-grid"><div><div class="logo"><span class="logo-mark"></span><span>ChoVot Pickleball</span></div><p style="color:#9fb4a7;max-width:330px">Marketplace chuyên vợt pickleball với xác thực hai phía và giao dịch minh bạch.</p></div><div><h4>Marketplace</h4><a href="mua-vot.html">Mua vợt</a><a href="ban-vot.html">Bán vợt</a><a href="dinh-gia.html">Định giá</a></div><div><h4>An toàn</h4><a href="xac-thuc.html">Xác thực</a><a href="don-hang.html">Theo dõi đơn</a></div><div><h4>Khám phá</h4><a href="nguoi-ban.html">Người bán uy tín</a><a href="index.html">Về ChoVot</a></div></div>';
+  document.body.insertBefore(footer,q('script[src="assets/app.js"]')||null);
+}
+if(!q('.mobile-bottom')){
+  const bottom=document.createElement('nav');
+  bottom.className='mobile-bottom';
+  bottom.innerHTML='<a href="index.html"><b>⌂</b>Trang chủ</a><a href="mua-vot.html"><b>⌕</b>Mua vợt</a><a class="sell" href="ban-vot.html"><b>＋</b>Đăng bán</a><a href="don-hang.html"><b>☷</b>Đơn hàng</a><a href="xac-thuc.html"><b>◉</b>Tôi</a>';
+  document.body.appendChild(bottom);
+}
+
 // Global motion chrome shared by every page.
 const progress=document.createElement('div');
 progress.className='scroll-progress';
