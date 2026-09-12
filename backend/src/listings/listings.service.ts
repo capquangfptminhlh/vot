@@ -17,8 +17,37 @@ export class ListingsService {
     return { id: row.id, title: row.title, description: row.description, condition: row.condition, conditionPercent: row.conditionPercent, priceVnd: Number(row.priceVnd), province: row.province, district: row.district, invoiceAvailable: row.invoiceAvailable, nfcAvailable: row.nfcAvailable, serialHint: row.serialHint, status: row.status, publishedAt: row.publishedAt, favoriteCount: Number(row.favoriteCount || 0), model: row.paddleModel ? { id: row.paddleModel.id, name: row.paddleModel.name, slug: row.paddleModel.slug, thicknessMm: row.paddleModel.thicknessMm ? Number(row.paddleModel.thicknessMm) : null, playStyle: row.paddleModel.playStyle, brand: row.paddleModel.brand } : null, customBrand: row.customBrand, customModel: row.customModel, images: (row.images || []).filter((x:any)=>x.moderationState==='APPROVED' && x.publicKey).map((x:any)=>({ id:x.id, sortOrder:x.sortOrder, url:this.storage.publicUrl(x.publicKey) })), seller: row.seller ? { id: row.seller.id, displayName: row.seller.profile?.displayName || 'Người bán ChoVot', sellerScore: row.seller.profile?.sellerScore || 0, rating: row.seller.profile?.rating ? Number(row.seller.profile.rating) : null, ratingCount: row.seller.profile?.ratingCount || 0, verification: row.seller.verification ? { phoneVerified: row.seller.verification.phoneVerified, identityVerified: row.seller.verification.identityVerified, bankNameVerified: row.seller.verification.bankNameVerified, status: row.seller.verification.status } : null } : null };
   }
   private include() { return { paddleModel: { include: { brand: { select: { id:true, name:true, slug:true } } } }, images: true, seller: { include: { profile: true, verification: true } } } as const; }
-  async listPublic(q = '', limit = 30) {
-    const rows = await this.prisma.listing.findMany({ where: { status: { in: ['ACTIVE','RESERVED'] }, ...(q.trim() ? { title: { contains: q.trim().slice(0,80), mode: 'insensitive' as const } } : {}) }, include: this.include(), orderBy: { publishedAt: 'desc' }, take: Math.min(Math.max(limit,1),60) });
+  async listPublic(filters: { q?:string; brand?:string; model?:string; condition?:string; minPrice?:number; maxPrice?:number; province?:string; sort?:string; limit?:number } = {}) {
+    const q=String(filters.q||'').trim().slice(0,80);
+    const brand=String(filters.brand||'').trim().slice(0,100);
+    const model=String(filters.model||'').trim().slice(0,140);
+    const condition=String(filters.condition||'').trim().slice(0,120);
+    const province=String(filters.province||'').trim().slice(0,100);
+    const minPrice=Number.isFinite(filters.minPrice)&&Number(filters.minPrice)>=0?BigInt(Math.floor(Number(filters.minPrice))):undefined;
+    const maxPrice=Number.isFinite(filters.maxPrice)&&Number(filters.maxPrice)>=0?BigInt(Math.floor(Number(filters.maxPrice))):undefined;
+    if(minPrice!==undefined&&maxPrice!==undefined&&minPrice>maxPrice) throw new BadRequestException('PRICE_RANGE_INVALID');
+    const brandName=brand.replace(/-/g,' ');
+    const modelName=model.replace(/-/g,' ');
+    const where:any={
+      status:{in:['ACTIVE','RESERVED']},
+      ...(q?{OR:[
+        {title:{contains:q,mode:'insensitive'}},
+        {customBrand:{contains:q,mode:'insensitive'}},
+        {customModel:{contains:q,mode:'insensitive'}},
+        {paddleModel:{is:{name:{contains:q,mode:'insensitive'}}}},
+        {paddleModel:{is:{brand:{is:{name:{contains:q,mode:'insensitive'}}}}}},
+      ]}:{}),
+      ...(brand?{AND:[{OR:[{paddleModel:{is:{brand:{is:{slug:brand}}}}},{customBrand:{equals:brandName,mode:'insensitive'}}]}]}:{}),
+      ...(model?{paddleModel:{is:{slug:model}}}:{}),
+      ...(condition?{condition:{contains:condition,mode:'insensitive'}}:{}),
+      ...(province?{province:{equals:province,mode:'insensitive'}}:{}),
+      ...((minPrice!==undefined||maxPrice!==undefined)?{priceVnd:{...(minPrice!==undefined?{gte:minPrice}:{}),...(maxPrice!==undefined?{lte:maxPrice}:{})}}:{}),
+    };
+    if(model&&!model.includes('-')) where.OR=[...(where.OR||[]),{customModel:{equals:modelName,mode:'insensitive'}}];
+    const sort=String(filters.sort||'newest');
+    const orderBy:any=sort==='price_asc'?{priceVnd:'asc'}:sort==='price_desc'?{priceVnd:'desc'}:{publishedAt:'desc'};
+    const take=Math.min(Math.max(Number(filters.limit)||30,1),60);
+    const rows=await this.prisma.listing.findMany({where,include:this.include(),orderBy,take});
     return rows.map(x=>this.publicRow(x));
   }
   async getPublic(id: string) {
