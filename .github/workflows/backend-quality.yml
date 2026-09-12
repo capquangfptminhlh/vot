@@ -92,12 +92,15 @@ jobs:
       - name: Build Nest API
         run: npm run build
 
-      - name: Start API
+      - name: Run backend tests
+        run: npm test
+
+      - name: Start API and wait for dependencies
         run: |
           node dist/main.js > /tmp/chovot-api.log 2>&1 &
           echo $! > /tmp/chovot-api.pid
           for i in {1..30}; do
-            if curl -fsS http://127.0.0.1:3000/api/v1/health > /tmp/health.json; then
+            if curl -fsS http://127.0.0.1:3000/api/v1/ready > /tmp/ready.json; then
               exit 0
             fi
             sleep 1
@@ -105,9 +108,11 @@ jobs:
           cat /tmp/chovot-api.log
           exit 1
 
-      - name: Health smoke
+      - name: Liveness and readiness smoke
         run: |
+          curl -fsS http://127.0.0.1:3000/api/v1/health > /tmp/health.json
           node -e "const h=require('/tmp/health.json'); if(!h.ok || h.service!=='chovot-api') process.exit(1)"
+          node -e "const r=require('/tmp/ready.json'); if(!r.ok || !r.dependencies?.database || !r.dependencies?.redis) process.exit(1)"
 
       - name: Auth, profile and listing lifecycle smoke
         run: |
