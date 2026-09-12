@@ -2,7 +2,7 @@ import { getSupabase, requireUser } from "../core/backend.js";
 
 const LISTING_SELECT = `
   id,title,description,condition,condition_percent,price_vnd,province,district,
-  serial_number,invoice_available,nfc_available,status,published_at,created_at,
+  invoice_available,nfc_available,status,published_at,created_at,
   seller_id,paddle_model_id,custom_brand,custom_model,
   paddle_models(id,name,slug,thickness_mm,play_style,brands(id,name,slug)),
   listing_images(id,storage_path,sort_order,moderation_state)
@@ -24,7 +24,6 @@ export async function listActiveListings({ query = "", limit = 30 } = {}) {
     .in("status", ["active", "reserved"])
     .order("published_at", { ascending: false })
     .limit(Math.min(Math.max(Number(limit) || 30, 1), 60));
-
   const q = String(query || "").trim().replace(/[%_]/g, "");
   if (q) request = request.ilike("title", `%${q}%`);
   const { data, error } = await request;
@@ -77,12 +76,10 @@ export async function createDraft(payload) {
     invoice_available: payload.invoice_available ?? null,
     nfc_available: payload.nfc_available ?? null,
   };
-
   if (row.title.length < 8) throw new Error("Tên tin cần ít nhất 8 ký tự.");
   if (!row.condition) throw new Error("Vui lòng chọn tình trạng.");
   if (!Number.isInteger(row.price_vnd) || row.price_vnd < 10000) throw new Error("Giá bán không hợp lệ.");
   if (!row.paddle_model_id && (!row.custom_brand || !row.custom_model)) throw new Error("Vui lòng chọn model chuẩn hoặc nhập hãng và model.");
-
   const { data, error } = await supabase.from("listings").insert(row).select("id,status,created_at").single();
   if (error) throw error;
   return data;
@@ -94,7 +91,6 @@ export async function uploadPrivateListingImages(listingId, files) {
   const id = assertUuid(listingId);
   const selected = Array.from(files || []).slice(0, 8);
   if (selected.length < 2) throw new Error("Cần ít nhất 2 ảnh thật của cây vợt.");
-
   const rows = [];
   for (let i = 0; i < selected.length; i += 1) {
     const file = selected[i];
@@ -103,14 +99,11 @@ export async function uploadPrivateListingImages(listingId, files) {
     const safeName = `${crypto.randomUUID()}-${String(file.name).replace(/[^a-zA-Z0-9._-]/g, "-")}`;
     const path = `${user.id}/${id}/${safeName}`;
     const { error: uploadError } = await supabase.storage.from("listing-private").upload(path, file, {
-      cacheControl: "3600",
-      upsert: false,
-      contentType: file.type,
+      cacheControl: "3600", upsert: false, contentType: file.type,
     });
     if (uploadError) throw uploadError;
     rows.push({ listing_id: id, storage_path: path, sort_order: i });
   }
-
   const { error } = await supabase.from("listing_images").insert(rows);
   if (error) throw error;
   return rows;
