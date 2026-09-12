@@ -1,29 +1,144 @@
 name: ChoVot Backend Quality
+
 on:
   push:
     branches: [main]
-    paths: ['backend/**','docker-compose.yml','.github/workflows/backend-quality.yml']
+    paths:
+      - 'backend/**'
+      - 'docker-compose.yml'
+      - '.github/workflows/backend-quality.yml'
   pull_request:
-    paths: ['backend/**','docker-compose.yml','.github/workflows/backend-quality.yml']
+    paths:
+      - 'backend/**'
+      - 'docker-compose.yml'
+      - '.github/workflows/backend-quality.yml'
+
 permissions:
   contents: read
+
 jobs:
-  build:
+  integration:
     runs-on: ubuntu-latest
-    defaults: { run: { working-directory: backend } }
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: chovot_test
+          POSTGRES_USER: chovot_test
+          POSTGRES_PASSWORD: chovot_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U chovot_test -d chovot_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+
+    defaults:
+      run:
+        working-directory: backend
+
     env:
-      DATABASE_URL: postgresql://build:build@localhost:5432/build
+      NODE_ENV: test
+      PORT: 3000
+      DATABASE_URL: postgresql://chovot_test:chovot_test_password@127.0.0.1:5432/chovot_test?schema=public
+      REDIS_URL: redis://127.0.0.1:6379
+      CORS_ORIGINS: http://localhost:8080
+      JWT_ACCESS_SECRET: ci-jwt-access-secret-change-me-123456789
+      OTP_PEPPER: ci-otp-pepper-change-me-123456789012345
+      REFRESH_TOKEN_PEPPER: ci-refresh-pepper-change-me-123456789012
+      IP_HASH_PEPPER: ci-ip-pepper-change-me-12345678901234567
+      SERIAL_HASH_PEPPER: ci-serial-pepper-change-me-12345678901234
+      OTP_DEV_CODE: '123456'
+      S3_ENDPOINT: http://127.0.0.1:9000
+      S3_REGION: us-east-1
+      S3_ACCESS_KEY: ci-access-key
+      S3_SECRET_KEY: ci-secret-key-change-me
+      S3_PRIVATE_BUCKET: chovot-private
+      S3_PUBLIC_BUCKET: chovot-public
+      S3_FORCE_PATH_STYLE: 'true'
+      PUBLIC_MEDIA_BASE_URL: http://127.0.0.1:9000/chovot-public
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
-        with: { node-version: '22', cache: 'npm', cache-dependency-path: backend/package.json }
-      - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+
       - name: Generate Prisma client
         run: npm run prisma:generate
+
       - name: Validate Prisma schema
         run: npm run prisma:validate
-      - name: Generate initial DDL smoke test
-        run: npx prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script > /tmp/chovot-init.sql && test -s /tmp/chovot-init.sql
+
+      - name: Apply migrations to real PostgreSQL
+        run: npm run prisma:migrate
+
       - name: Build Nest API
         run: npm run build
+
+      - name: Start API
+        run: |
+          node dist/main.js > /tmp/chovot-api.log 2>&1 &
+          echo $! > /tmp/chovot-api.pid
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:3000/api/v1/health > /tmp/health.json; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/chovot-api.log
+          exit 1
+
+      - name: Health smoke
+        run: |
+          node -e "const h=require('/tmp/health.json'); if(!h.ok || h.service!=='chovot-api') process.exit(1)"
+
+      - name: Auth, profile and listing lifecycle smoke
+        run: |
+          curl -fsS -X POST http://127.0.0.1:3000/api/v1/auth/otp/request \
+            -H 'content-type: application/json' \
+            -d '{"channel":"EMAIL","target":"ci@chovot.test"}' > /tmp/otp-request.json
+
+          curl -fsS -X POST http://127.0.0.1:3000/api/v1/auth/otp/verify \
+            -H 'content-type: application/json' \
+            -d '{"channel":"EMAIL","target":"ci@chovot.test","code":"123456"}' > /tmp/login.json
+
+          TOKEN=$(node -e "const x=require('/tmp/login.json'); if(!x.accessToken) process.exit(1); process.stdout.write(x.accessToken)")
+
+          curl -fsS http://127.0.0.1:3000/api/v1/me \
+            -H "authorization: Bearer $TOKEN" > /tmp/me.json
+          node -e "const x=require('/tmp/me.json'); if(x.email!=='ci@chovot.test') process.exit(1)"
+
+          curl -fsS -X POST http://127.0.0.1:3000/api/v1/listings \
+            -H 'content-type: application/json' \
+            -H "authorization: Bearer $TOKEN" \
+            -d '{"customBrand":"JOOLA","customModel":"Perseus","title":"JOOLA Perseus test CI","condition":"Like new 98-99%","priceVnd":4890000,"province":"TP.HCM"}' > /tmp/listing.json
+
+          LISTING_ID=$(node -e "const x=require('/tmp/listing.json'); if(!x.id || x.status!=='DRAFT') process.exit(1); process.stdout.write(x.id)")
+
+          STATUS=$(curl -sS -o /tmp/submit.json -w '%{http_code}' -X POST "http://127.0.0.1:3000/api/v1/listings/$LISTING_ID/submit" \
+            -H "authorization: Bearer $TOKEN")
+          test "$STATUS" = "403"
+          grep -q 'SELLER_VERIFICATION_REQUIRED' /tmp/submit.json
+
+      - name: Stop API
+        if: always()
+        run: |
+          test -f /tmp/chovot-api.pid && kill $(cat /tmp/chovot-api.pid) || true
+          cat /tmp/chovot-api.log || true
