@@ -8,7 +8,7 @@
     "build": "nest build",
     "start": "node dist/main.js",
     "start:dev": "nest start --watch",
-    "test": "jest --runInBand --passWithNoTests",
+    "test": "jest --runInBand",
     "prisma:generate": "prisma generate",
     "prisma:validate": "prisma validate",
     "prisma:migrate": "prisma migrate deploy && npm run prisma:seed && npm run catalog:check",
