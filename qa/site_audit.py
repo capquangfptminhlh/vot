@@ -17,12 +17,12 @@ PUBLIC_REQUIRED = [
     "supabase/migrations/0006_staff_moderation_api.sql","supabase/migrations/0007_abuse_and_auth_integrity.sql",
     "supabase/migrations/0008_privacy_and_realtime.sql",
     "assets/runtime-config.js","assets/core/backend.js",
-    "assets/services/auth-service.js","assets/services/listing-service.js","assets/services/conversation-service.js","assets/services/admin-service.js",
+    "assets/services/auth-service.js","assets/services/listing-service.js","assets/services/conversation-service.js","assets/services/admin-service.js","assets/services/engagement-service.js",
     "assets/pages/auth-page.js","assets/pages/sell-page.js","assets/pages/account-page.js","assets/pages/market-page.js",
     "assets/pages/product-page.js","assets/pages/chat-page.js","assets/pages/moderation-page.js","assets/pages/verification-page.js",
     "docs/API_CONTRACT.md","docs/SEO_URL_ARCHITECTURE.md","docs/STORAGE_SECURITY.md","docs/PRODUCTION_READINESS.md","admin/moderation.html"
 ]
-NOINDEX_PATHS={"tin-nhan.html","dang-nhap.html","tai-khoan.html","404.html","admin/moderation.html"}
+NOINDEX_PATHS={"san-pham.html","tin-nhan.html","dang-nhap.html","tai-khoan.html","404.html","admin/moderation.html"}
 STALE_CRITICAL=["don-hang.html","giữ tiền trung gian","protected transaction flow","xác thực hai phía","verified buyer + verified seller"]
 FAKE_CONTACT=["0900000000","090 000 0000"]
 
@@ -105,7 +105,7 @@ def main():
             expected=[x for x in PUBLIC_REQUIRED if x.endswith(".html") and x not in NOINDEX_PATHS and x!="404.html" and not x.startswith("admin/")]
             for rel in expected:
                 if url_for(rel) not in locs: errors.append(f"sitemap: missing {url_for(rel)}")
-            if any("tin-nhan.html" in u or "dang-nhap.html" in u or "tai-khoan.html" in u or "/admin/" in u for u in locs): errors.append("sitemap: private/internal URL present")
+            if any("san-pham.html" in u or "tin-nhan.html" in u or "dang-nhap.html" in u or "tai-khoan.html" in u or "/admin/" in u for u in locs): errors.append("sitemap: private/dynamic URL present")
         except Exception as exc: errors.append(f"sitemap parse error: {exc}")
 
     def sql(name):
@@ -138,7 +138,7 @@ def main():
         if "service_role" in text: errors.append(f"frontend secret boundary: service_role reference in {path.relative_to(ROOT).as_posix()}")
         if re.search(r"(?:sk_live_|sk-proj-|eyj[a-z0-9_-]{40,})", text, re.I): errors.append(f"frontend secret boundary: secret-like token in {path.relative_to(ROOT).as_posix()}")
 
-    print("ChoVot launch audit v2.5")
+    print("ChoVot launch audit v2.6")
     print(f"HTML files checked: {len(html_files)}")
     for w in warnings: print("WARN ",w)
     for e in errors: print("ERROR",e)
