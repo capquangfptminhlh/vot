@@ -1,76 +1,87 @@
-# ChoVot API Contract v0.1
+# ChoVot API Contract v1
 
-This contract is backend-neutral. It is intended to be implemented by Supabase Edge Functions or another server layer; the browser must never receive service-role credentials or raw KYC documents.
+API production do NestJS backend của ChoVot cung cấp tại prefix `/api/v1`. Browser chỉ gọi REST/WebSocket này; không nhận database credentials, object-storage secret, KYC secret hay raw identity documents.
 
 ## Auth
-- `POST /auth/otp/start` — start phone/email OTP.
-- `POST /auth/otp/verify` — verify OTP and create session.
-- Seller-only protected actions require authenticated session.
+- `POST /auth/otp/request` — body `{ channel: "EMAIL"|"PHONE", target }`.
+- `POST /auth/otp/verify` — xác minh OTP; trả access token ngắn hạn và set refresh token HttpOnly cookie.
+- `POST /auth/refresh` — rotate refresh token và trả access token mới.
+- `POST /auth/logout` — revoke refresh token hiện tại và clear cookie.
+- Access token gửi bằng `Authorization: Bearer ...`; frontend giữ token trong memory.
+
+## Account
+- `GET /me` — hồ sơ hiện tại + public-safe seller verification state.
+- `GET /me/listings` — tối đa 100 tin của chính seller, gồm lifecycle/moderation state.
 
 ## Seller verification
-- `POST /seller/verification/start` — create KYC provider session; returns redirect/token only.
-- `GET /seller/verification/status` — returns `pending|verified|rejected|suspended` plus public-safe flags.
-- Bank-name verification result is stored as boolean/status; do not expose bank account numbers publicly.
-- Raw CCCD/selfie images must stay with the contracted KYC provider when possible.
+- `GET /verification/me` — trả `phoneVerified`, `identityVerified`, `bankNameVerified`, `status`.
+- `POST /verification/phone/request` — OTP để liên kết SĐT với account đang đăng nhập; khác OTP login.
+- `POST /verification/phone/verify` — xác minh và gắn SĐT vào đúng user hiện tại.
+- `POST /verification/identity/session` — tạo phiên eKYC provider; yêu cầu phone đã verified.
+- `POST /verification/bank/session` — tạo phiên đối chiếu bank-name provider; yêu cầu phone đã verified.
+- `POST /verification/webhook/:kind` — endpoint server-to-server; production phải thay static placeholder bằng signature/replay validation theo provider cụ thể.
+- Seller `VERIFIED` chỉ khi phone + identity + bank đều true.
 
 ## Catalog
+Catalog nguồn hiện còn nằm trong `data/paddle-catalog.json`; production cần seed vào `Brand`/`PaddleModel` trong PostgreSQL và mở API đọc riêng.
+Dự kiến:
 - `GET /brands`
 - `GET /brands/:slug/models`
 - `GET /models/:slug`
-- Model fields include `verification_status`, `source_url`, `verified_at`. Unverified fields must not be presented as facts.
 
 ## Listings
-- `GET /listings?q=&brand=&model=&condition=&price_min=&price_max=&province=&sort=`
-- `GET /listings/:id`
-- `POST /listings` — verified sellers only; creates `draft` or `pending_review`.
-- `PATCH /listings/:id` — owner only.
-- `POST /listings/:id/publish` — requires seller verification and moderation pass.
-- `POST /listings/:id/mark-sold` — owner only.
-- `POST /listings/:id/report` — authenticated user; anonymous reporting may be added with abuse controls.
+- `GET /listings?q=&limit=` — public `ACTIVE|RESERVED`; response chỉ field public-safe.
+- `GET /listings/:id` — public `ACTIVE|RESERVED|SOLD`.
+- `POST /listings` — authenticated seller; **luôn tạo `DRAFT`**, không cho browser chọn status.
+- `POST /listings/:id/images/presign` — owner + draft only; trả signed private upload URL.
+- `POST /listings/:id/images/complete` — xác nhận object đã upload và ghi metadata.
+- `POST /listings/:id/submit` — yêu cầu seller VERIFIED + tối thiểu 2 ảnh; chuyển `PENDING_REVIEW`.
+- `POST /listings/:id/sold` — owner only, từ `ACTIVE|RESERVED`; ghi audit log.
+- Raw serial không được public; backend lưu hash + suffix hint khi cần.
+
+## Favorites và report
+- `GET /listings/:id/favorite` — trạng thái yêu thích của user hiện tại.
+- `POST /listings/:id/favorite/toggle` — toggle server-side và cập nhật counter an toàn.
+- `POST /listings/:id/reports` — reason nằm trong allowlist, open report được upsert để hạn chế duplicate spam.
+- Client không được update report workflow fields.
 
 ## Images
-- Browser requests signed upload URL; object path is scoped to seller/listing.
-- Strip EXIF GPS by default.
-- Generate image hash/perceptual hash for duplicate detection.
-- Never allow arbitrary public bucket writes.
-
-## Favorites & saved searches
-- `PUT /favorites/:listing_id`
-- `DELETE /favorites/:listing_id`
-- `GET /favorites`
-- `POST /saved-searches`
-- Saved-search notifications require explicit opt-in and rate limits.
+1. Seller xin signed URL cho listing draft của chính mình.
+2. Browser PUT file trực tiếp vào private S3-compatible bucket.
+3. Backend HEAD object và ghi `ListingImage` pending.
+4. Moderation xử lý ảnh: Sharp decode/rotate/resize/re-encode WebP, loại metadata, tính SHA-256.
+5. Duplicate cross-seller là risk signal.
+6. Chỉ derivative approved được copy sang public bucket và trả public URL.
+- JPG/PNG/WebP only; max 12 MB/file; max 8 ảnh/tin ở flow hiện tại.
 
 ## Messaging
-- `POST /conversations` — starts conversation for one listing; buyer and seller only.
+- `POST /conversations/from-listing/:listingId` — backend lấy seller từ listing thật; browser không truyền seller ID.
 - `GET /conversations`
-- `GET /conversations/:id/messages`
-- `POST /conversations/:id/messages`
-- Block phone/link spam or repeated unsolicited messages server-side.
+- `GET /conversations/:id`
+- `GET /conversations/:id/messages?limit=`
+- Socket.IO namespace `/chat`:
+  - handshake `auth.token` là JWT access token;
+  - `join_conversation` chỉ thành công nếu user là buyer/seller;
+  - `send_message` kiểm participant, block state và Redis rate-limit 30 msg/min/user;
+  - server emit `message:new` vào room conversation.
 
 ## Moderation
-- Internal/admin only: `GET /admin/moderation/queue`
-- `POST /admin/listings/:id/approve`
-- `POST /admin/listings/:id/request-evidence`
-- `POST /admin/listings/:id/reject`
-- `POST /admin/users/:id/suspend`
-- Every action writes `moderation_actions` audit log.
+Tất cả endpoint dưới đây yêu cầu authenticated `MODERATOR|ADMIN`:
+- `GET /admin/dashboard`
+- `GET /admin/moderation?limit=`
+- `GET /admin/moderation/:id/evidence`
+- `POST /admin/moderation/:id` — `{ decision: "approve"|"reject"|"needs_review", reason? }`.
+- Approve yêu cầu seller VERIFIED + ít nhất 2 ảnh approved sau media processing.
+- Mọi moderation decision ghi `ModerationAction`.
 
-## Risk signals
-At minimum calculate:
-- seller verification state;
-- new-account velocity;
-- duplicate image hash;
-- price deviation vs model median;
-- repeated serial/phone/device signals;
-- off-platform contact/link spam;
-- report history;
-- listing edit frequency after approval.
+## Public seller trust
+Listing public chỉ trả các trường trust an toàn: display name, seller score/rating và ba verification flags/status. Provider references, raw giấy tờ, bank identifiers và private evidence path không xuất hiện trong public response.
 
-## Privacy / security requirements
-- RLS on every user-data table.
-- KYC and bank details are never public.
-- Server-side authorization for all writes; UI state is never trusted.
-- Rate limit OTP, messages, listing creation and reports.
-- Audit admin/moderation access.
-- Support account/data deletion and retention policy.
+## Security invariants
+- Browser không được chọn system role, listing status, moderation state, trust score hoặc counter.
+- Mọi write nhạy cảm được authorize server-side bằng user lấy từ JWT/DB.
+- PostgreSQL credentials, S3 secret, OTP/KYC secret chỉ tồn tại server-side.
+- OTP target/code, refresh token, serial được hash phù hợp trước khi lưu.
+- CORS production dùng allowlist; Socket.IO dùng cùng policy origin.
+- OTP/chat/report/upload cần rate limit; abuse controls được mở rộng theo dữ liệu production.
+- Audit moderation và lifecycle nhạy cảm.
