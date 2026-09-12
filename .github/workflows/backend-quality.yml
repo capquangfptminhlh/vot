@@ -1,0 +1,29 @@
+name: ChoVot Backend Quality
+on:
+  push:
+    branches: [main]
+    paths: ['backend/**','docker-compose.yml','.github/workflows/backend-quality.yml']
+  pull_request:
+    paths: ['backend/**','docker-compose.yml','.github/workflows/backend-quality.yml']
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: backend } }
+    env:
+      DATABASE_URL: postgresql://build:build@localhost:5432/build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: 'npm', cache-dependency-path: backend/package.json }
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Generate Prisma client
+        run: npm run prisma:generate
+      - name: Validate Prisma schema
+        run: npm run prisma:validate
+      - name: Generate initial DDL smoke test
+        run: npx prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script > /tmp/chovot-init.sql && test -s /tmp/chovot-init.sql
+      - name: Build Nest API
+        run: npm run build

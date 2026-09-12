@@ -1,0 +1,317 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole { USER MODERATOR ADMIN }
+enum UserStatus { ACTIVE SUSPENDED DELETED }
+enum VerificationStatus { PENDING VERIFIED REJECTED SUSPENDED }
+enum ListingStatus { DRAFT PENDING_REVIEW ACTIVE RESERVED SOLD EXPIRED REJECTED REMOVED }
+enum ModerationState { PENDING APPROVED NEEDS_REVIEW REJECTED }
+enum EvidenceStatus { SUBMITTED VERIFIED REJECTED NOT_VERIFIABLE }
+enum ReportStatus { OPEN REVIEWING RESOLVED DISMISSED }
+enum OtpChannel { EMAIL PHONE }
+
+model User {
+  id String @id @default(uuid()) @db.Uuid
+  email String? @unique
+  phone String? @unique
+  role UserRole @default(USER)
+  status UserStatus @default(ACTIVE)
+  profile Profile?
+  verification SellerVerification?
+  listings Listing[]
+  favorites Favorite[]
+  buyerConversations Conversation[] @relation("BuyerConversations")
+  sellerConversations Conversation[] @relation("SellerConversations")
+  messages Message[]
+  reportsCreated Report[] @relation("Reporter")
+  reportsAgainst Report[] @relation("ReportedUser")
+  moderationActions ModerationAction[] @relation("Moderator")
+  blocksCreated UserBlock[] @relation("Blocker")
+  blocksReceived UserBlock[] @relation("Blocked")
+  refreshTokens RefreshToken[]
+  otpChallenges OtpChallenge[]
+  kycEvents KycAuditEvent[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([role, status])
+}
+
+model Profile {
+  userId String @id @db.Uuid
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName String @default("")
+  avatarUrl String?
+  province String?
+  bio String?
+  sellerScore Int @default(0)
+  rating Decimal? @db.Decimal(3,2)
+  ratingCount Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SellerVerification {
+  userId String @id @db.Uuid
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phoneVerified Boolean @default(false)
+  identityVerified Boolean @default(false)
+  bankNameVerified Boolean @default(false)
+  status VerificationStatus @default(PENDING)
+  identityProviderRef String?
+  bankProviderRef String?
+  reviewedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model KycAuditEvent {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event String
+  provider String?
+  providerRef String?
+  metadata Json?
+  createdAt DateTime @default(now())
+  @@index([userId, createdAt])
+}
+
+model Brand {
+  id String @id @default(uuid()) @db.Uuid
+  slug String @unique
+  name String @unique
+  country String?
+  officialUrl String?
+  models PaddleModel[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PaddleModel {
+  id String @id @default(uuid()) @db.Uuid
+  brandId String @db.Uuid
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  slug String @unique
+  name String
+  generation String?
+  thicknessMm Decimal? @db.Decimal(5,2)
+  surface String?
+  core String?
+  shape String?
+  averageWeightOz Decimal? @db.Decimal(5,2)
+  lengthIn Decimal? @db.Decimal(5,2)
+  widthIn Decimal? @db.Decimal(5,2)
+  gripLengthIn Decimal? @db.Decimal(5,2)
+  gripCircumferenceIn Decimal? @db.Decimal(5,2)
+  approval String?
+  nfc Boolean?
+  playStyle String?
+  sourceUrl String?
+  verifiedAt DateTime?
+  listings Listing[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([brandId, name])
+  @@index([brandId, name])
+}
+
+model Listing {
+  id String @id @default(uuid()) @db.Uuid
+  sellerId String @db.Uuid
+  seller User @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  paddleModelId String? @db.Uuid
+  paddleModel PaddleModel? @relation(fields: [paddleModelId], references: [id], onDelete: SetNull)
+  customBrand String?
+  customModel String?
+  title String
+  description String @default("")
+  condition String
+  conditionPercent Int?
+  priceVnd BigInt
+  province String?
+  district String?
+  serialHash String?
+  serialHint String?
+  invoiceAvailable Boolean?
+  nfcAvailable Boolean?
+  status ListingStatus @default(DRAFT)
+  moderationState ModerationState @default(PENDING)
+  moderationReason String?
+  viewCount BigInt @default(0)
+  favoriteCount BigInt @default(0)
+  publishedAt DateTime?
+  expiresAt DateTime?
+  images ListingImage[]
+  evidence ListingEvidence[]
+  favorites Favorite[]
+  conversations Conversation[]
+  reports Report[]
+  moderationActions ModerationAction[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([status, publishedAt(sort: Desc)])
+  @@index([sellerId, createdAt(sort: Desc)])
+  @@index([paddleModelId, status])
+  @@index([priceVnd])
+  @@index([province, status])
+}
+
+model ListingImage {
+  id String @id @default(uuid()) @db.Uuid
+  listingId String @db.Uuid
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  privateKey String
+  publicKey String?
+  sortOrder Int @default(0)
+  contentHash String?
+  moderationState ModerationState @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([listingId, sortOrder])
+  @@index([listingId, moderationState])
+}
+
+model ListingEvidence {
+  id String @id @default(uuid()) @db.Uuid
+  listingId String @db.Uuid
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  evidenceType String
+  publicLabel String?
+  privateStorageKey String?
+  valueHash String?
+  verificationStatus EvidenceStatus @default(SUBMITTED)
+  moderationNote String?
+  reviewedAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([listingId, evidenceType])
+}
+
+model Favorite {
+  userId String @db.Uuid
+  listingId String @db.Uuid
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@id([userId, listingId])
+}
+
+model Conversation {
+  id String @id @default(uuid()) @db.Uuid
+  listingId String @db.Uuid
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyerId String @db.Uuid
+  buyer User @relation("BuyerConversations", fields: [buyerId], references: [id], onDelete: Cascade)
+  sellerId String @db.Uuid
+  seller User @relation("SellerConversations", fields: [sellerId], references: [id], onDelete: Cascade)
+  messages Message[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([listingId, buyerId, sellerId])
+  @@index([buyerId, updatedAt(sort: Desc)])
+  @@index([sellerId, updatedAt(sort: Desc)])
+}
+
+model Message {
+  id String @id @default(uuid()) @db.Uuid
+  conversationId String @db.Uuid
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId String @db.Uuid
+  sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  body String
+  readAt DateTime?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([conversationId, createdAt])
+  @@index([senderId, createdAt(sort: Desc)])
+}
+
+model Report {
+  id String @id @default(uuid()) @db.Uuid
+  reporterId String @db.Uuid
+  reporter User @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  listingId String? @db.Uuid
+  listing Listing? @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  reportedUserId String? @db.Uuid
+  reportedUser User? @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  reason String
+  detail String?
+  status ReportStatus @default(OPEN)
+  resolvedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([status, createdAt])
+  @@index([reporterId, listingId, status])
+}
+
+model ModerationAction {
+  id String @id @default(uuid()) @db.Uuid
+  moderatorId String @db.Uuid
+  moderator User @relation("Moderator", fields: [moderatorId], references: [id], onDelete: Restrict)
+  listingId String? @db.Uuid
+  listing Listing? @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  userId String? @db.Uuid
+  action String
+  reason String?
+  metadata Json?
+  createdAt DateTime @default(now())
+  @@index([listingId, createdAt])
+  @@index([moderatorId, createdAt])
+}
+
+model UserBlock {
+  blockerId String @db.Uuid
+  blockedId String @db.Uuid
+  blocker User @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@id([blockerId, blockedId])
+}
+
+model RefreshToken {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  userAgent String?
+  ipHash String?
+  createdAt DateTime @default(now())
+  @@index([userId, expiresAt])
+}
+
+model OtpChallenge {
+  id String @id @default(uuid()) @db.Uuid
+  userId String? @db.Uuid
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel OtpChannel
+  targetHash String
+  codeHash String
+  purpose String @default("login")
+  attempts Int @default(0)
+  expiresAt DateTime
+  consumedAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([targetHash, channel, purpose, createdAt(sort: Desc)])
+  @@index([userId, purpose, createdAt(sort: Desc)])
+}
+
+model AuditLog {
+  id String @id @default(uuid()) @db.Uuid
+  actorId String? @db.Uuid
+  event String
+  entityType String?
+  entityId String?
+  ipHash String?
+  metadata Json?
+  createdAt DateTime @default(now())
+  @@index([event, createdAt])
+  @@index([entityType, entityId, createdAt])
+}
