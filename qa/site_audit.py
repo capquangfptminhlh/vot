@@ -9,13 +9,16 @@ ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_REQUIRED = [
     "index.html","mua-vot.html","thuong-hieu.html","san-pham.html","ban-vot.html","xac-thuc.html",
     "nguoi-ban.html","dinh-gia.html","an-toan-giao-dich.html","chinh-sach-dang-tin.html","quy-che-hoat-dong.html",
-    "dieu-khoan.html","chinh-sach-rieng-tu.html","faq.html","404.html",
+    "dieu-khoan.html","chinh-sach-rieng-tu.html","faq.html","dang-nhap.html","tai-khoan.html","404.html",
     "hang/joola.html","model/joola-ben-johns-perseus-3s-16mm.html",
     "robots.txt","sitemap.xml","manifest.webmanifest","data/paddle-catalog.json",
     "supabase/migrations/0001_core.sql","supabase/migrations/0002_lifecycle.sql","supabase/migrations/0003_trust_hardening.sql",
-    "docs/API_CONTRACT.md","docs/SEO_URL_ARCHITECTURE.md","docs/STORAGE_SECURITY.md","admin/moderation.html"
+    "supabase/migrations/0004_production_guardrails.sql",
+    "assets/runtime-config.js","assets/core/backend.js","assets/services/auth-service.js","assets/services/listing-service.js",
+    "assets/pages/auth-page.js","assets/pages/sell-page.js","assets/pages/account-page.js","assets/pages/market-page.js",
+    "docs/API_CONTRACT.md","docs/SEO_URL_ARCHITECTURE.md","docs/STORAGE_SECURITY.md","docs/PRODUCTION_READINESS.md","admin/moderation.html"
 ]
-NOINDEX_PATHS={"tin-nhan.html","404.html","admin/moderation.html"}
+NOINDEX_PATHS={"tin-nhan.html","dang-nhap.html","tai-khoan.html","404.html","admin/moderation.html"}
 STALE_CRITICAL=["don-hang.html","giữ tiền trung gian","protected transaction flow","xác thực hai phía","verified buyer + verified seller"]
 FAKE_CONTACT=["0900000000","090 000 0000"]
 
@@ -99,12 +102,13 @@ def main():
             expected=[x for x in PUBLIC_REQUIRED if x.endswith(".html") and x not in NOINDEX_PATHS and x!="404.html" and not x.startswith("admin/")]
             for rel in expected:
                 if url_for(rel) not in locs: errors.append(f"sitemap: missing {url_for(rel)}")
-            if any("tin-nhan.html" in u or "/admin/" in u for u in locs): errors.append("sitemap: private/internal URL present")
+            if any("tin-nhan.html" in u or "dang-nhap.html" in u or "tai-khoan.html" in u or "/admin/" in u for u in locs): errors.append("sitemap: private/internal URL present")
         except Exception as exc: errors.append(f"sitemap parse error: {exc}")
 
     core=(ROOT/"supabase/migrations/0001_core.sql").read_text(encoding="utf-8") if (ROOT/"supabase/migrations/0001_core.sql").exists() else ""
     lifecycle=(ROOT/"supabase/migrations/0002_lifecycle.sql").read_text(encoding="utf-8") if (ROOT/"supabase/migrations/0002_lifecycle.sql").exists() else ""
     trust=(ROOT/"supabase/migrations/0003_trust_hardening.sql").read_text(encoding="utf-8") if (ROOT/"supabase/migrations/0003_trust_hardening.sql").exists() else ""
+    guard=(ROOT/"supabase/migrations/0004_production_guardrails.sql").read_text(encoding="utf-8") if (ROOT/"supabase/migrations/0004_production_guardrails.sql").exists() else ""
     for token in ["enable row level security","moderation_actions"]:
         if token not in core: errors.append(f"schema core: missing {token}")
     for token in ["handle_new_user","enforce_listing_publish_state","set_updated_at"]:
@@ -116,8 +120,15 @@ def main():
         errors.append("schema trust: listings INSERT column grant missing")
     elif re.search(r"\b(status|moderation_state|view_count|favorite_count|published_at|expires_at)\b",insert_grant.group(1),re.I):
         errors.append("schema trust: client INSERT grants server-owned listing fields")
+    for token in ["user_roles","revoke update(status)","submit_listing_for_review","moderate_listing","listing-private","listing-public","revoke insert, update, delete on public.listing_images"]:
+        if token not in guard: errors.append(f"schema guardrails: missing {token}")
 
-    print("ChoVot launch audit v2.3")
+    for path in (ROOT/"assets").rglob("*.js"):
+        text=path.read_text(encoding="utf-8", errors="ignore").lower()
+        if "service_role" in text:
+            errors.append(f"frontend secret boundary: service_role reference in {path.relative_to(ROOT).as_posix()}")
+
+    print("ChoVot launch audit v2.4")
     print(f"HTML files checked: {len(html_files)}")
     for w in warnings: print("WARN ",w)
     for e in errors: print("ERROR",e)
