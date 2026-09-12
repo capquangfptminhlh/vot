@@ -8,14 +8,61 @@ datasource db {
   provider = "postgresql"
 }
 
-enum UserRole { USER MODERATOR ADMIN }
-enum UserStatus { ACTIVE SUSPENDED DELETED }
-enum VerificationStatus { PENDING VERIFIED REJECTED SUSPENDED }
-enum ListingStatus { DRAFT PENDING_REVIEW ACTIVE RESERVED SOLD EXPIRED REJECTED REMOVED }
-enum ModerationState { PENDING APPROVED NEEDS_REVIEW REJECTED }
-enum EvidenceStatus { SUBMITTED VERIFIED REJECTED NOT_VERIFIABLE }
-enum ReportStatus { OPEN REVIEWING RESOLVED DISMISSED }
-enum OtpChannel { EMAIL PHONE }
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  SUSPENDED
+}
+
+enum ListingStatus {
+  DRAFT
+  PENDING_REVIEW
+  ACTIVE
+  RESERVED
+  SOLD
+  EXPIRED
+  REJECTED
+  REMOVED
+}
+
+enum ModerationState {
+  PENDING
+  APPROVED
+  NEEDS_REVIEW
+  REJECTED
+}
+
+enum EvidenceStatus {
+  SUBMITTED
+  VERIFIED
+  REJECTED
+  NOT_VERIFIABLE
+}
+
+enum ReportStatus {
+  OPEN
+  REVIEWING
+  RESOLVED
+  DISMISSED
+}
+
+enum OtpChannel {
+  EMAIL
+  PHONE
+}
 
 model User {
   id String @id @default(uuid()) @db.Uuid
