@@ -10,7 +10,24 @@ export class ListingsController {
   constructor(private readonly service: ListingsService) {}
 
   @Get()
-  list(@Query('q') q = '', @Query('limit') limit = '30') { return this.service.listPublic(q, Number(limit) || 30); }
+  list(
+    @Query('q') q = '',
+    @Query('brand') brand = '',
+    @Query('model') model = '',
+    @Query('condition') condition = '',
+    @Query('price_min') priceMin = '',
+    @Query('price_max') priceMax = '',
+    @Query('province') province = '',
+    @Query('sort') sort = 'newest',
+    @Query('limit') limit = '30',
+  ) {
+    return this.service.listPublic({
+      q, brand, model, condition, province, sort,
+      minPrice: priceMin === '' ? undefined : Number(priceMin),
+      maxPrice: priceMax === '' ? undefined : Number(priceMax),
+      limit: Number(limit) || 30,
+    });
+  }
 
   @Get(':id')
   get(@Param('id', ParseUUIDPipe) id: string) { return this.service.getPublic(id); }
