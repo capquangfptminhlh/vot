@@ -1,0 +1,81 @@
+import { backendConfig, friendlyError, getSupabase } from "../core/backend.js";
+import { startConversation, listConversations, getConversation, getMessages, sendMessage, subscribeMessages } from "../services/conversation-service.js";
+
+const host = document.getElementById("fxChatHost");
+let unsubscribe = null;
+let currentUserId = null;
+
+function esc(value) {
+  return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+}
+function money(value) { return new Intl.NumberFormat("vi-VN").format(Number(value || 0)) + " đ"; }
+function time(value) { try { return new Intl.DateTimeFormat("vi-VN", { dateStyle:"short", timeStyle:"short" }).format(new Date(value)); } catch { return ""; } }
+function status(message, type="") { if (host) host.innerHTML = `<div class="listing-note" data-type="${esc(type)}">${esc(message)}</div>`; }
+
+async function ensureSession() {
+  const supabase = await getSupabase();
+  const { data, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  if (!data.user) {
+    const next = `tin-nhan.html${location.search}`;
+    location.replace(`dang-nhap.html?next=${encodeURIComponent(next)}`);
+    return null;
+  }
+  currentUserId = data.user.id;
+  return data.user;
+}
+
+async function showConversationList() {
+  const rows = await listConversations();
+  if (!rows.length) {
+    host.innerHTML = `<div class="panel"><h2>Chưa có cuộc trò chuyện</h2><p>Vào một tin đang bán và chọn “Nhắn người bán” để bắt đầu.</p><a class="btn btn-primary" href="mua-vot.html">Tìm vợt</a></div>`;
+    return;
+  }
+  host.innerHTML = `<div class="panel"><h2>Cuộc trò chuyện</h2><div style="display:grid;gap:10px">${rows.map(c=>`<a class="panel" style="display:block;padding:14px" href="tin-nhan.html?c=${encodeURIComponent(c.id)}"><b>${esc(c.listings?.title || "Tin đăng")}</b><p style="margin:5px 0 0;color:#66736b">${money(c.listings?.price_vnd)} • ${esc(c.listings?.status || "")}</p></a>`).join("")}</div></div>`;
+}
+
+function messageHtml(message) {
+  const mine = message.sender_id === currentUserId;
+  return `<div style="display:flex;justify-content:${mine ? "flex-end" : "flex-start"};margin:8px 0"><div style="max-width:75%;padding:10px 12px;border-radius:14px;background:${mine ? "#e7f7ef" : "#f2f4f3"}"><div>${esc(message.body)}</div><small style="color:#6a756f">${time(message.created_at)}</small></div></div>`;
+}
+
+async function showConversation(id) {
+  const [conversation, messages] = await Promise.all([getConversation(id), getMessages(id)]);
+  host.innerHTML = `<div class="panel"><div class="section-head"><div><a class="link" href="tin-nhan.html">← Tất cả tin nhắn</a><h2 style="margin-top:8px">${esc(conversation.listings?.title || "Cuộc trò chuyện")}</h2><p>${money(conversation.listings?.price_vnd)} • ${esc(conversation.listings?.status || "")}</p></div></div><div data-message-list style="min-height:220px;max-height:55vh;overflow:auto;padding:8px 0">${messages.map(messageHtml).join("") || "<p>Chưa có tin nhắn. Hãy hỏi rõ tình trạng vợt trước khi giao dịch.</p>"}</div><form data-message-form style="display:flex;gap:8px;margin-top:12px"><input name="body" maxlength="3000" autocomplete="off" required placeholder="Nhập tin nhắn..." style="flex:1"><button class="btn btn-primary" type="submit">Gửi</button></form><p style="font-size:12px;color:#66736b">Không gửi mật khẩu, OTP ngân hàng hoặc thông tin thẻ. Giao dịch ngoài ChoVot là quyết định của hai bên.</p></div>`;
+  const list = host.querySelector("[data-message-list]");
+  if (list) list.scrollTop = list.scrollHeight;
+  host.querySelector("[data-message-form]")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const input = event.currentTarget.body;
+    const text = input.value.trim();
+    if (!text) return;
+    event.currentTarget.querySelector("button").disabled = true;
+    try { await sendMessage(id, text); input.value = ""; }
+    catch (error) { alert(friendlyError(error)); }
+    finally { event.currentTarget.querySelector("button").disabled = false; }
+  });
+  unsubscribe = await subscribeMessages(id, (message) => {
+    if (!list || !message) return;
+    list.insertAdjacentHTML("beforeend", messageHtml(message));
+    list.scrollTop = list.scrollHeight;
+  });
+}
+
+async function init() {
+  if (!backendConfig().configured) { status("Bản preview chưa nối backend production nên chat thật đang tắt.", "warning"); return; }
+  try {
+    const user = await ensureSession();
+    if (!user) return;
+    const params = new URLSearchParams(location.search);
+    const listingId = params.get("listing");
+    let conversationId = params.get("c");
+    if (listingId && !conversationId) {
+      const conversation = await startConversation(listingId);
+      conversationId = conversation.id;
+      history.replaceState(null, "", `tin-nhan.html?c=${encodeURIComponent(conversationId)}`);
+    }
+    if (conversationId) await showConversation(conversationId); else await showConversationList();
+  } catch (error) { status(friendlyError(error), "error"); }
+}
+window.addEventListener("pagehide", () => unsubscribe?.());
+init();
