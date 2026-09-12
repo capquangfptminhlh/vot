@@ -1,49 +1,18 @@
-import { getSupabase } from "../core/backend.js";
+import { api, clearAccessToken, requireUser, setAccessToken } from "../core/backend.js";
 
-export async function getSession() {
-  const supabase = await getSupabase();
-  const { data, error } = await supabase.auth.getSession();
-  if (error) throw error;
-  return data.session;
-}
-
-export async function sendEmailOtp(email) {
-  const supabase = await getSupabase();
-  const clean = String(email || "").trim().toLowerCase();
-  if (!clean) throw new Error("Vui lòng nhập email.");
-  const { error } = await supabase.auth.signInWithOtp({
-    email: clean,
-    options: {
-      emailRedirectTo: `${window.location.origin}${window.location.pathname.replace(/[^/]+$/, "tai-khoan.html")}`,
-      shouldCreateUser: true,
-    },
-  });
-  if (error) throw error;
-  return true;
-}
-
-export async function sendPhoneOtp(phone) {
-  const supabase = await getSupabase();
-  const clean = String(phone || "").replace(/\s+/g, "");
-  if (!/^\+?[1-9]\d{7,14}$/.test(clean)) throw new Error("Số điện thoại phải ở định dạng quốc tế, ví dụ +84901234567.");
-  const { error } = await supabase.auth.signInWithOtp({ phone: clean });
-  if (error) throw error;
+function email(value) {
+  const clean = String(value || "").trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) throw new Error("Email không hợp lệ.");
   return clean;
 }
-
-export async function verifyPhoneOtp(phone, token) {
-  const supabase = await getSupabase();
-  const { data, error } = await supabase.auth.verifyOtp({
-    phone: String(phone || "").replace(/\s+/g, ""),
-    token: String(token || "").trim(),
-    type: "sms",
-  });
-  if (error) throw error;
-  return data.session;
+function phone(value) {
+  const clean = String(value || "").replace(/[\s()-]/g, "");
+  if (!/^\+[1-9]\d{7,14}$/.test(clean)) throw new Error("Số điện thoại phải ở định dạng quốc tế, ví dụ +84901234567.");
+  return clean;
 }
-
-export async function signOut() {
-  const supabase = await getSupabase();
-  const { error } = await supabase.auth.signOut({ scope: "local" });
-  if (error) throw error;
-}
+export async function getSession() { try { return { user: await requireUser() }; } catch (error) { if (error?.code === "AUTH_REQUIRED") return null; throw error; } }
+export async function sendEmailOtp(value) { const target = email(value); await api("/auth/otp/request", { method:"POST", auth:false, body:{ channel:"EMAIL", target } }); return target; }
+export async function verifyEmailOtp(value, code) { const target=email(value); const data=await api("/auth/otp/verify",{method:"POST",auth:false,body:{channel:"EMAIL",target,code:String(code||"").trim()}}); setAccessToken(data.accessToken); return requireUser(); }
+export async function sendPhoneOtp(value) { const target=phone(value); await api("/auth/otp/request",{method:"POST",auth:false,body:{channel:"PHONE",target}}); return target; }
+export async function verifyPhoneOtp(value, code) { const target=phone(value); const data=await api("/auth/otp/verify",{method:"POST",auth:false,body:{channel:"PHONE",target,code:String(code||"").trim()}}); setAccessToken(data.accessToken); return requireUser(); }
+export async function signOut() { try { await api("/auth/logout",{method:"POST",auth:false}); } finally { clearAccessToken(); } }
