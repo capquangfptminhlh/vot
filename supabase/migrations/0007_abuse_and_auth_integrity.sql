@@ -1,6 +1,30 @@
 -- ChoVot auth/trust synchronization and abuse controls.
 -- Apply after 0006_staff_moderation_api.sql.
 
+create or replace function public.normalize_seller_verification_status()
+returns trigger
+language plpgsql
+security invoker
+set search_path = public
+as $$
+begin
+  if new.status not in ('rejected','suspended') then
+    if new.phone_verified and new.identity_verified and new.bank_name_verified then
+      new.status := 'verified';
+      if new.reviewed_at is null then new.reviewed_at := now(); end if;
+    else
+      new.status := 'pending';
+      new.reviewed_at := null;
+    end if;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists seller_verification_normalize_status on public.seller_verifications;
+create trigger seller_verification_normalize_status
+before insert or update on public.seller_verifications
+for each row execute function public.normalize_seller_verification_status();
+
 create or replace function public.sync_phone_verification_from_auth()
 returns trigger
 language plpgsql
@@ -19,6 +43,20 @@ drop trigger if exists auth_phone_verification_sync on auth.users;
 create trigger auth_phone_verification_sync
 after update of phone, phone_confirmed_at on auth.users
 for each row execute function public.sync_phone_verification_from_auth();
+
+-- KYC provider events are server-only audit records. Never expose raw payloads publicly.
+create table if not exists public.kyc_audit_events (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete set null,
+  provider text not null,
+  event_type text not null,
+  provider_event_ref text,
+  result text not null check (result in ('received','verified','rejected','error')),
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+alter table public.kyc_audit_events enable row level security;
+revoke all on public.kyc_audit_events from anon, authenticated;
 
 -- Server-side chat burst limit: 30 messages/minute/user.
 create or replace function public.enforce_message_rate_limit()
