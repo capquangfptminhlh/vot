@@ -58,4 +58,10 @@ if(gallery&&paddle){const vars=[['#dfff4f','-7deg','JOOLA'],['#7bc7ff','7deg','S
 
 const range=q('#priceValue');range?.addEventListener('input',()=>{const l=q('#priceLabel');if(l)l.textContent=Number(range.value).toLocaleString('vi-VN')+' đ'});
 
-const featureScript=document.createElement('script');featureScript.src='assets/features.js?v=6';featureScript.defer=false;document.body.appendChild(featureScript);
+const legacyPages=new Set(['dinh-gia.html','nguoi-ban.html']);
+if(legacyPages.has(current)){
+  const featureScript=document.createElement('script');
+  featureScript.src='assets/features.js?v=6';
+  featureScript.defer=false;
+  document.body.appendChild(featureScript);
+}
