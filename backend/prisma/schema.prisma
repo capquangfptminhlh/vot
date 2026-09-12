@@ -85,6 +85,10 @@ model User {
   refreshTokens RefreshToken[]
   otpChallenges OtpChallenge[]
   kycEvents KycAuditEvent[]
+  reviewsWritten Review[] @relation("ReviewAuthor")
+  reviewsReceived Review[] @relation("ReviewSeller")
+  savedSearches SavedSearch[]
+  notifications Notification[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([role, status])
@@ -201,6 +205,7 @@ model Listing {
   conversations Conversation[]
   reports Report[]
   moderationActions ModerationAction[]
+  reviews Review[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([status, publishedAt(sort: Desc)])
@@ -348,6 +353,57 @@ model OtpChallenge {
   createdAt DateTime @default(now())
   @@index([targetHash, channel, purpose, createdAt(sort: Desc)])
   @@index([userId, purpose, createdAt(sort: Desc)])
+}
+
+model Review {
+  id String @id @default(uuid()) @db.Uuid
+  reviewerId String @db.Uuid
+  reviewer User @relation("ReviewAuthor", fields: [reviewerId], references: [id], onDelete: Cascade)
+  sellerId String @db.Uuid
+  seller User @relation("ReviewSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+  listingId String @db.Uuid
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  rating Int
+  comment String @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([reviewerId, listingId])
+  @@index([sellerId, createdAt(sort: Desc)])
+  @@index([listingId])
+}
+
+model SavedSearch {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name String?
+  query String?
+  brandSlug String?
+  modelSlug String?
+  minPriceVnd BigInt?
+  maxPriceVnd BigInt?
+  province String?
+  condition String?
+  notifyEnabled Boolean @default(false)
+  lastNotifiedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([notifyEnabled, lastNotifiedAt])
+}
+
+model Notification {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind String
+  title String
+  body String
+  url String?
+  readAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, readAt])
 }
 
 model AuditLog {
