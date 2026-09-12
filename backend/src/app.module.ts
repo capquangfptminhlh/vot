@@ -9,8 +9,11 @@ import { CatalogModule } from './catalog/catalog.module';
 import { ConversationsModule } from './conversations/conversations.module';
 import { ListingsModule } from './listings/listings.module';
 import { MeModule } from './me/me.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RedisModule } from './redis/redis.module';
+import { ReviewsModule } from './reviews/reviews.module';
+import { SavedSearchesModule } from './saved-searches/saved-searches.module';
 import { StorageModule } from './storage/storage.module';
 import { VerificationModule } from './verification/verification.module';
 
@@ -25,6 +28,9 @@ import { VerificationModule } from './verification/verification.module';
     CatalogModule,
     ListingsModule,
     ConversationsModule,
+    ReviewsModule,
+    SavedSearchesModule,
+    NotificationsModule,
     VerificationModule,
     AdminModule,
     MeModule,
