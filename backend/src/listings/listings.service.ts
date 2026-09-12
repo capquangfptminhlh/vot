@@ -43,7 +43,29 @@ export class ListingsService {
     const imageCount=await this.prisma.listingImage.count({where:{listingId:id}}); if(imageCount<2) throw new BadRequestException('MIN_2_IMAGES');
     await this.prisma.listing.update({where:{id:listing.id},data:{status:'PENDING_REVIEW',moderationState:'PENDING',moderationReason:null}}); return {ok:true,status:'PENDING_REVIEW'};
   }
+  async markSold(userId:string,id:string) {
+    const listing = await this.prisma.listing.findUnique({ where:{id}, select:{sellerId:true,status:true} });
+    if (!listing || listing.sellerId !== userId) throw new NotFoundException('LISTING_NOT_FOUND');
+    if (!['ACTIVE','RESERVED'].includes(listing.status)) throw new BadRequestException('LISTING_NOT_SELLABLE');
+    const row = await this.prisma.listing.update({ where:{id}, data:{status:'SOLD'}, select:{id:true,status:true,updatedAt:true} });
+    await this.prisma.auditLog.create({ data:{actorId:userId,event:'listing_marked_sold',entityType:'listing',entityId:id} });
+    return row;
+  }
   async favoriteState(userId:string,id:string) { await this.getPublic(id); return Boolean(await this.prisma.favorite.findUnique({where:{userId_listingId:{userId,listingId:id}}})); }
-  async toggleFavorite(userId:string,id:string) { await this.getPublic(id); const existing=await this.prisma.favorite.findUnique({where:{userId_listingId:{userId,listingId:id}}}); if(existing){ await this.prisma.$transaction([this.prisma.favorite.delete({where:{userId_listingId:{userId,listingId:id}}}),this.prisma.listing.update({where:{id},data:{favoriteCount:{decrement:1}}})]); return {active:false}; } await this.prisma.$transaction([this.prisma.favorite.create({data:{userId,listingId:id}}),this.prisma.listing.update({where:{id},data:{favoriteCount:{increment:1}}})]); return {active:true}; }
+  async toggleFavorite(userId:string,id:string) {
+    await this.getPublic(id);
+    return this.prisma.$transaction(async tx => {
+      const existing=await tx.favorite.findUnique({where:{userId_listingId:{userId,listingId:id}}});
+      if(existing){
+        await tx.favorite.delete({where:{userId_listingId:{userId,listingId:id}}});
+        const current=await tx.listing.findUnique({where:{id},select:{favoriteCount:true}});
+        if((current?.favoriteCount ?? 0n)>0n) await tx.listing.update({where:{id},data:{favoriteCount:{decrement:1}}});
+        return {active:false};
+      }
+      await tx.favorite.create({data:{userId,listingId:id}});
+      await tx.listing.update({where:{id},data:{favoriteCount:{increment:1}}});
+      return {active:true};
+    });
+  }
   async report(userId:string,id:string,dto:ReportDto) { await this.getPublic(id); const allowed=['fake','scam','wrong_condition','wrong_product','prohibited','spam','other']; const reason=dto.reason.toLowerCase(); if(!allowed.includes(reason)) throw new BadRequestException('REPORT_REASON_INVALID'); const existing=await this.prisma.report.findFirst({where:{reporterId:userId,listingId:id,status:{in:['OPEN','REVIEWING']}}}); if(existing) return this.prisma.report.update({where:{id:existing.id},data:{reason,detail:dto.detail?.trim()||null},select:{id:true,status:true}}); return this.prisma.report.create({data:{reporterId:userId,listingId:id,reason,detail:dto.detail?.trim()||null},select:{id:true,status:true}}); }
 }
