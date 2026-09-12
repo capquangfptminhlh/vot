@@ -9,6 +9,7 @@ create table if not exists public.user_roles (
   updated_at timestamptz not null default now()
 );
 alter table public.user_roles enable row level security;
+drop policy if exists "user reads own role" on public.user_roles;
 create policy "user reads own role" on public.user_roles for select using (auth.uid() = user_id);
 revoke insert, update, delete on public.user_roles from anon, authenticated;
 grant select on public.user_roles to authenticated;
@@ -26,6 +27,13 @@ grant execute on function public.is_staff() to authenticated;
 -- System-owned lifecycle must not be directly changed by browser UPDATE.
 revoke update(status) on public.listings from authenticated;
 
+-- Listing image moderation/hash are server-owned. Browser may add a path/order only.
+revoke insert, update, delete on public.listing_images from anon, authenticated;
+grant select on public.listing_images to anon, authenticated;
+grant insert(listing_id, storage_path, sort_order) on public.listing_images to authenticated;
+grant update(sort_order) on public.listing_images to authenticated;
+grant delete on public.listing_images to authenticated;
+
 create or replace function public.submit_listing_for_review(target_listing uuid)
 returns public.listings
 language plpgsql security definer set search_path = public as $$
@@ -38,9 +46,7 @@ begin
     select 1 from public.seller_verifications v
     where v.user_id = auth.uid() and v.status = 'verified'
   ) into verified;
-  if not verified then
-    raise exception 'Seller verification is required before review submission';
-  end if;
+  if not verified then raise exception 'Seller verification is required before review submission'; end if;
 
   select count(*) into image_count
   from public.listing_images i
@@ -133,11 +139,9 @@ using (bucket_id = 'listing-public');
 do $$
 begin
   if not exists (select 1 from pg_constraint where conname = 'listings_title_length_chk') then
-    alter table public.listings add constraint listings_title_length_chk
-      check (char_length(title) between 8 and 140) not valid;
+    alter table public.listings add constraint listings_title_length_chk check (char_length(title) between 8 and 140) not valid;
   end if;
   if not exists (select 1 from pg_constraint where conname = 'listings_description_length_chk') then
-    alter table public.listings add constraint listings_description_length_chk
-      check (char_length(description) <= 8000) not valid;
+    alter table public.listings add constraint listings_description_length_chk check (char_length(description) <= 8000) not valid;
   end if;
 end $$;
