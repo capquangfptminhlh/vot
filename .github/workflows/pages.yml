@@ -12,25 +12,169 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
+  release-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Run ChoVot static audit
+        run: python qa/site_audit.py
+
+      - name: Check browser JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            node --input-type=module --check < "$file"
+          done < <(find assets -type f -name '*.js' -print0)
+
+      - name: Reject browser secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -REni '(service_role|SUPABASE_SERVICE_ROLE_KEY|sk_live_|sk-proj-)' assets --include='*.js'; then
+            echo 'Secret-like token found in browser assets.' >&2
+            exit 1
+          fi
+
+      - name: Validate compose file
+        run: docker compose config --quiet
+
+      - name: Start backend dependencies
+        run: docker compose up -d postgres redis minio minio-init
+
+      - name: Prepare isolated backend test environment
+        working-directory: backend
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .env.example .env
+          sed -i 's/@postgres:5432/@127.0.0.1:5432/' .env
+          sed -i 's#redis://redis:6379#redis://127.0.0.1:6379#' .env
+          sed -i 's#http://minio:9000#http://127.0.0.1:9000#' .env
+
+      - name: Install locked backend dependencies
+        working-directory: backend
+        run: npm ci --no-audit --no-fund
+
+      - name: Generate and validate Prisma client
+        working-directory: backend
+        run: npm run prisma:generate && npm run prisma:validate
+
+      - name: Apply migrations, seed catalog and validate catalog
+        working-directory: backend
+        run: npm run prisma:migrate
+
+      - name: Build and test Nest API
+        working-directory: backend
+        run: npm run build && npm test
+
+      - name: Start API and wait for readiness
+        working-directory: backend
+        shell: bash
+        run: |
+          set -euo pipefail
+          node dist/main.js > /tmp/chovot-release-api.log 2>&1 &
+          echo $! > /tmp/chovot-release-api.pid
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:3000/api/v1/ready > /tmp/chovot-release-ready.json; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/chovot-release-api.log
+          exit 1
+
+      - name: Smoke health, auth and draft listing flow
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsS http://127.0.0.1:3000/api/v1/health > /tmp/chovot-release-health.json
+          node -e "const h=require('/tmp/chovot-release-health.json'); if(!h.ok || h.service!=='chovot-api') process.exit(1)"
+          node -e "const r=require('/tmp/chovot-release-ready.json'); if(!r.ok || !r.dependencies?.database || !r.dependencies?.redis) process.exit(1)"
+
+          curl -fsS -X POST http://127.0.0.1:3000/api/v1/auth/otp/request \
+            -H 'content-type: application/json' \
+            -d '{"channel":"EMAIL","target":"release@chovot.test"}' > /tmp/chovot-release-otp.json
+
+          curl -fsS -X POST http://127.0.0.1:3000/api/v1/auth/otp/verify \
+            -H 'content-type: application/json' \
+            -d '{"channel":"EMAIL","target":"release@chovot.test","code":"123456"}' > /tmp/chovot-release-login.json
+
+          TOKEN=$(node -e "const x=require('/tmp/chovot-release-login.json'); if(!x.accessToken) process.exit(1); process.stdout.write(x.accessToken)")
+
+          curl -fsS -X POST http://127.0.0.1:3000/api/v1/listings \
+            -H 'content-type: application/json' \
+            -H "authorization: Bearer $TOKEN" \
+            -d '{"customBrand":"JOOLA","customModel":"Perseus","title":"ChoVot release gate listing","condition":"Like new 98-99%","priceVnd":4890000,"province":"TP.HCM"}' > /tmp/chovot-release-listing.json
+
+          node -e "const x=require('/tmp/chovot-release-listing.json'); if(!x.id || x.status!=='DRAFT') process.exit(1)"
+
+      - name: Build production API image
+        run: docker build --pull --tag chovot-api:release backend
+
+      - name: Verify production runtime artifact
+        run: docker run --rm --entrypoint sh chovot-api:release -c 'test -f /app/dist/main.js && test -f /app/prisma/schema.prisma && test -f /app/package.json'
+
+      - name: Prepare static Pages artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf _site
+          mkdir -p _site
+          find . -maxdepth 1 -type f \( -name '*.html' -o -name 'robots.txt' -o -name 'sitemap.xml' -o -name 'manifest.webmanifest' -o -name '.nojekyll' \) -exec cp '{}' _site/ \;
+          for dir in assets data hang model admin; do
+            if [ -d "$dir" ]; then
+              cp -R "$dir" _site/
+            fi
+          done
+          test -f _site/index.html
+          test -f _site/robots.txt
+          test -f _site/sitemap.xml
+          test ! -e _site/backend
+          test ! -e _site/docs
+          test ! -e _site/qa
+
+      - name: Upload validated site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Cleanup release services
+        if: always()
+        shell: bash
+        run: |
+          test -f /tmp/chovot-release-api.pid && kill $(cat /tmp/chovot-release-api.pid) || true
+          docker compose down -v --remove-orphans || true
+          cat /tmp/chovot-release-api.log 2>/dev/null || true
+
   deploy:
+    needs: release-gate
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
       - name: Setup Pages
         uses: actions/configure-pages@v5
         with:
           enablement: true
-      - name: Upload site
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
