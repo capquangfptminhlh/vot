@@ -69,6 +69,10 @@ jobs:
       - name: Install locked dependencies
         run: npm ci --no-audit --no-fund
 
+      - name: Report production dependency audit
+        shell: bash
+        run: npm audit --omit=dev --audit-level=high || true
+
       - name: Generate Prisma client
         run: npm run prisma:generate
 
