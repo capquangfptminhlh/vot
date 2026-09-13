@@ -1,0 +1,102 @@
+name: ChoVot Dependency Remediation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/dependency-remediation.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Apply patched dependency resolutions
+        working-directory: backend
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .env.example .env
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'package.json';
+          const pkg = JSON.parse(fs.readFileSync(path, 'utf8'));
+          pkg.dependencies.sharp = '0.35.4';
+          pkg.overrides = {
+            ...(pkg.overrides || {}),
+            multer: '2.3.0',
+            ajv: '8.18.0',
+            'deepmerge-ts': '8.0.0',
+            mysql2: '3.23.1'
+          };
+          fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n');
+          NODE
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+
+      - name: Install exact patched graph
+        working-directory: backend
+        run: npm ci --no-audit --no-fund
+
+      - name: Show patched dependency graph
+        working-directory: backend
+        run: npm ls multer sharp ajv deepmerge-ts mysql2
+
+      - name: Require clean production audit
+        working-directory: backend
+        run: npm audit --omit=dev --audit-level=moderate
+
+      - name: Validate Prisma
+        working-directory: backend
+        run: npm run prisma:generate && npm run prisma:validate
+
+      - name: Build and test Nest API
+        working-directory: backend
+        run: npm run build && npm test
+
+      - name: Smoke Sharp image processing
+        working-directory: backend
+        shell: bash
+        run: |
+          node <<'NODE'
+          const sharp = require('sharp');
+          sharp({ create: { width: 4, height: 4, channels: 3, background: '#ffffff' } })
+            .rotate()
+            .resize({ width: 2, height: 2, fit: 'inside' })
+            .webp({ quality: 86 })
+            .toBuffer()
+            .then((buf) => {
+              if (!buf.length) process.exit(1);
+              console.log(`Sharp smoke PASS: ${buf.length} bytes`);
+            })
+            .catch((error) => {
+              console.error(error);
+              process.exit(1);
+            });
+          NODE
+
+      - name: Commit validated dependency patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add backend/package.json backend/package-lock.json
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'No dependency changes to commit.'
+            exit 0
+          fi
+          git commit -m 'fix: patch backend dependency vulnerabilities'
+          git push origin HEAD:main
