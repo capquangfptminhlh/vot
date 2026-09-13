@@ -23,13 +23,13 @@ jobs:
       postgres:
         image: postgres:17-alpine
         env:
-          POSTGRES_DB: chovot_test
-          POSTGRES_USER: chovot_test
-          POSTGRES_PASSWORD: chovot_test_password
+          POSTGRES_DB: chovot
+          POSTGRES_USER: chovot
+          POSTGRES_PASSWORD: chovot_dev_password
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U chovot_test -d chovot_test"
+          --health-cmd "pg_isready -U chovot -d chovot"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 20
@@ -47,35 +47,24 @@ jobs:
       run:
         working-directory: backend
 
-    env:
-      NODE_ENV: test
-      PORT: 3000
-      DATABASE_URL: postgresql://chovot_test:chovot_test_password@127.0.0.1:5432/chovot_test?schema=public
-      REDIS_URL: redis://127.0.0.1:6379
-      CORS_ORIGINS: http://localhost:8080
-      JWT_ACCESS_SECRET: ci-jwt-access-secret-change-me-123456789
-      OTP_PEPPER: ci-otp-pepper-change-me-123456789012345
-      REFRESH_TOKEN_PEPPER: ci-refresh-pepper-change-me-123456789012
-      IP_HASH_PEPPER: ci-ip-pepper-change-me-12345678901234567
-      SERIAL_HASH_PEPPER: ci-serial-pepper-change-me-12345678901234
-      OTP_DEV_CODE: '123456'
-      S3_ENDPOINT: http://127.0.0.1:9000
-      S3_REGION: us-east-1
-      S3_ACCESS_KEY: ci-access-key
-      S3_SECRET_KEY: ci-secret-key-change-me
-      S3_PRIVATE_BUCKET: chovot-private
-      S3_PUBLIC_BUCKET: chovot-public
-      S3_FORCE_PATH_STYLE: 'true'
-      PUBLIC_MEDIA_BASE_URL: http://127.0.0.1:9000/chovot-public
-
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: 'npm'
           cache-dependency-path: backend/package-lock.json
+
+      - name: Prepare isolated backend test environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .env.example .env
+          sed -i 's/^NODE_ENV=.*/NODE_ENV=test/' .env
+          sed -i 's/@postgres:5432/@127.0.0.1:5432/' .env
+          sed -i 's#redis://redis:6379#redis://127.0.0.1:6379#' .env
+          sed -i 's#http://minio:9000#http://127.0.0.1:9000#' .env
 
       - name: Install locked dependencies
         run: npm ci --no-audit --no-fund
