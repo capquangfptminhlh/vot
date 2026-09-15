@@ -56,6 +56,21 @@ jobs:
           cache: 'npm'
           cache-dependency-path: backend/package-lock.json
 
+      - name: Start real object storage and create buckets
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose up -d minio minio-init
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:9000/minio/health/ready >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker compose logs minio minio-init
+          exit 1
+
       - name: Prepare isolated backend test environment
         shell: bash
         run: |
@@ -105,7 +120,7 @@ jobs:
         run: |
           curl -fsS http://127.0.0.1:3000/api/v1/health > /tmp/health.json
           node -e "const h=require('/tmp/health.json'); if(!h.ok || h.service!=='chovot-api') process.exit(1)"
-          node -e "const r=require('/tmp/ready.json'); if(!r.ok || !r.dependencies?.database || !r.dependencies?.redis) process.exit(1)"
+          node -e "const r=require('/tmp/ready.json'); if(!r.ok || !r.dependencies?.database || !r.dependencies?.redis || !r.dependencies?.storage) process.exit(1)"
 
       - name: Auth, profile and listing lifecycle smoke
         run: |
@@ -135,8 +150,11 @@ jobs:
           test "$STATUS" = "403"
           grep -q 'SELLER_VERIFICATION_REQUIRED' /tmp/submit.json
 
-      - name: Stop API
+      - name: Stop API and object storage
         if: always()
+        working-directory: .
         run: |
           test -f /tmp/chovot-api.pid && kill $(cat /tmp/chovot-api.pid) || true
           cat /tmp/chovot-api.log || true
+          docker compose logs minio minio-init || true
+          docker compose stop minio || true
