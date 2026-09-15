@@ -10,27 +10,43 @@ ChoVot là chợ đăng tin chuyên vợt pickleball tại Việt Nam, tập tru
 ## Kiến trúc
 ### Frontend
 - HTML/CSS/JavaScript responsive, mobile web-app shell.
-- Browser chỉ gọi ChoVot REST API + Socket.IO; không truy cập database trực tiếp.
-- Access token chỉ ở memory; refresh token dùng HttpOnly cookie.
-- GitHub Pages hiện dùng làm preview frontend.
+- Browser chỉ gọi ChoVot REST API + Socket.IO; không truy cập database/BaaS trực tiếp.
+- Access token chỉ ở memory; refresh token dùng HttpOnly + Secure + SameSite cookie ở production.
+- Production frontend được đóng gói trong `deploy/Dockerfile.web` và phục vụ cùng domain với API qua Caddy.
+- GitHub Pages chỉ là **preview frontend**, không phải hạ tầng production.
 
 ### Backend
 - Node.js 22 + NestJS 11.
 - PostgreSQL + Prisma 7, migrations versioned trong `backend/prisma/migrations`.
-- Redis cho rate-limit/realtime support.
-- S3-compatible storage; MinIO cho local/self-hosted.
+- Redis cho rate-limit và realtime support.
+- S3-compatible storage; MinIO cho local/self-hosted production.
 - Socket.IO cho chat realtime có JWT + conversation authorization.
 - Sharp xử lý ảnh: decode/re-encode WebP, bỏ metadata, hash chống ảnh trùng trước khi public.
-- Docker Compose local stack: PostgreSQL + Redis + MinIO + API.
+- Backend không phụ thuộc Supabase.
+
+### Production self-hosted
+`docker-compose.production.yml` dựng stack riêng:
+- Caddy edge: public 80/443 duy nhất;
+- Nest API: private Docker network;
+- PostgreSQL: private network, không publish 5432;
+- Redis có password: private network, không publish 6379;
+- MinIO: private network, không publish console/API trực tiếp;
+- migration one-shot chạy trước API;
+- signed upload dùng storage subdomain HTTPS;
+- public image chỉ đi qua bucket sanitized/public.
+
+Runbook đầy đủ: [`docs/PRODUCTION_DEPLOY.md`](docs/PRODUCTION_DEPLOY.md).
 
 ## Trust & Safety
 - Listing luôn tạo ở `DRAFT`; browser không được tự chọn system status.
 - Submit bắt buộc seller VERIFIED + tối thiểu 2 ảnh.
 - Seller VERIFIED chỉ khi phone + identity + bank đều được backend/provider xác nhận.
+- Seller `SUSPENDED` không thể tự trở lại VERIFIED do callback KYC.
 - Raw serial được hash; public chỉ dùng hint/trạng thái cần thiết.
 - Chat lấy seller từ listing trong database, không tin seller ID do browser truyền.
 - Report, favorite counter, moderation state, role và audit log đều do backend quản lý.
 - Moderator/admin action được authorize server-side và ghi audit.
+- OTP có quota theo target + IP; OTP không giao được sẽ bị vô hiệu challenge ngay.
 
 ## Các trang/giao diện hiện có
 - Trang chủ desktop + mobile web-app.
@@ -57,7 +73,7 @@ API health:
 GET http://localhost:3000/api/v1/health
 ```
 
-Frontend local có thể chạy bằng bất kỳ static server nào; `assets/runtime-config.js` cần `apiBaseUrl` trỏ vào API local/production phù hợp.
+Frontend local có thể chạy bằng static server; `assets/runtime-config.js` cần `apiBaseUrl` trỏ vào API local phù hợp.
 
 ## Quality gates
 Frontend/static:
@@ -65,21 +81,39 @@ Frontend/static:
 python qa/site_audit.py
 ```
 
-Backend CI hiện kiểm:
+Backend CI kiểm:
 - dependency install từ `package-lock.json`;
 - Prisma generate + validate;
-- `prisma migrate deploy` lên PostgreSQL test thật;
-- Nest build;
-- API boot + health;
+- migration lên PostgreSQL test thật;
+- Nest build + Jest;
+- API boot + health/readiness;
 - OTP dev login -> `/me` -> tạo listing draft;
-- submit draft chưa KYC phải bị backend từ chối đúng.
+- submit draft chưa KYC phải bị backend từ chối đúng;
+- regression test cho trust/suspension.
+
+Container/deploy CI kiểm:
+- cú pháp `deploy/backup.sh` và `deploy/restore.sh`;
+- local + production Compose;
+- API runtime image;
+- Prisma migration image;
+- frontend Caddy image;
+- production Caddy config;
+- frontend image không chứa `backend/`, `docs/` hay `qa/`.
+
+## Backup/restore
+- `deploy/backup.sh`: backup PostgreSQL + private/public MinIO + checksum + commit metadata.
+- `deploy/restore.sh`: verify checksum, restore DB/object storage, migrate forward rồi mới mở API/web.
+- `.env*`, dumps và thư mục backup được `.gitignore` chặn khỏi Git.
 
 ## Chưa được gọi là production live 100% cho tới khi
-- Có hạ tầng backend production thật: API host/VPS, PostgreSQL, Redis, S3-compatible object storage + backup.
-- Có OTP email/SMS provider production.
-- Có eKYC/bank-name provider production và webhook validation đúng chuẩn provider.
-- Có domain/DNS/TLS production được xác nhận.
-- Có monitoring/logging/alert/backup-restore đã test.
-- Điền thông tin pháp nhân/kênh khiếu nại và hoàn tất nghĩa vụ TMĐT áp dụng trước launch.
+- VPS production thật được cấu hình và stack `docker-compose.production.yml` chạy trên đó.
+- Domain/DNS/TLS production được xác nhận.
+- OTP email/SMS provider production được kết nối và test thật.
+- eKYC/bank-name provider production + webhook contract được kết nối và test thật.
+- Browser E2E toàn luồng bằng hai user thật pass trên production: login -> KYC -> đăng tin -> upload ảnh -> moderation -> public listing -> favorite/report/chat -> sold.
+- Backup được copy off-host và restore drill đã pass.
+- Monitoring/logging/alerting production hoạt động.
+- Điền thông tin pháp nhân/kênh khiếu nại và hoàn tất nghĩa vụ TMĐT/quyền riêng tư áp dụng trước launch.
+- Dữ liệu catalog và listing thật đủ chất lượng để thay toàn bộ dữ liệu minh họa.
 
 Không có cam kết “Top 1 Google”. Mục tiêu là xây UX, trust, dữ liệu và topical coverage đủ mạnh để cạnh tranh vị trí dẫn đầu dựa trên dữ liệu thật sau launch.
