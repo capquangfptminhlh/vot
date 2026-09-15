@@ -1,5 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  GetObjectCommand,
+  HeadBucketCommand,
+  HeadObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { createHash, randomUUID } from 'node:crypto';
 import sharp from 'sharp';
@@ -41,6 +47,14 @@ export class StorageService {
       ...common,
       endpoint: process.env.S3_PUBLIC_ENDPOINT || process.env.S3_ENDPOINT,
     });
+  }
+
+  async readiness() {
+    await Promise.all([
+      this.internalClient.send(new HeadBucketCommand({ Bucket: this.privateBucket })),
+      this.internalClient.send(new HeadBucketCommand({ Bucket: this.publicBucket })),
+    ]);
+    return true;
   }
 
   async presign(userId: string, listingId: string, fileName: string, contentType: string, size: number) {
