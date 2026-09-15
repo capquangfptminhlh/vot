@@ -1,0 +1,172 @@
+name: chovot-production
+
+x-api-environment: &api-environment
+  NODE_ENV: production
+  PORT: "3000"
+  TRUST_PROXY_HOPS: "1"
+  DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+  REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379
+  CORS_ORIGINS: https://${CHOVOT_DOMAIN:?CHOVOT_DOMAIN is required}
+  JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET is required}
+  OTP_PEPPER: ${OTP_PEPPER:?OTP_PEPPER is required}
+  REFRESH_TOKEN_PEPPER: ${REFRESH_TOKEN_PEPPER:?REFRESH_TOKEN_PEPPER is required}
+  IP_HASH_PEPPER: ${IP_HASH_PEPPER:?IP_HASH_PEPPER is required}
+  SERIAL_HASH_PEPPER: ${SERIAL_HASH_PEPPER:?SERIAL_HASH_PEPPER is required}
+  OTP_DELIVERY_WEBHOOK_URL: ${OTP_DELIVERY_WEBHOOK_URL:-}
+  OTP_DELIVERY_WEBHOOK_SECRET: ${OTP_DELIVERY_WEBHOOK_SECRET:-}
+  S3_ENDPOINT: http://minio:9000
+  S3_PUBLIC_ENDPOINT: https://${CHOVOT_STORAGE_DOMAIN:?CHOVOT_STORAGE_DOMAIN is required}
+  S3_REGION: ${S3_REGION:-us-east-1}
+  S3_ACCESS_KEY: ${S3_ACCESS_KEY:?S3_ACCESS_KEY is required}
+  S3_SECRET_KEY: ${S3_SECRET_KEY:?S3_SECRET_KEY is required}
+  S3_PRIVATE_BUCKET: ${S3_PRIVATE_BUCKET:-chovot-private}
+  S3_PUBLIC_BUCKET: ${S3_PUBLIC_BUCKET:-chovot-public}
+  S3_FORCE_PATH_STYLE: "true"
+  PUBLIC_MEDIA_BASE_URL: https://${CHOVOT_DOMAIN}/media
+  KYC_PROVIDER_BASE_URL: ${KYC_PROVIDER_BASE_URL:-}
+  KYC_PROVIDER_API_KEY: ${KYC_PROVIDER_API_KEY:-}
+  KYC_PROVIDER_NAME: ${KYC_PROVIDER_NAME:-}
+  KYC_WEBHOOK_SECRET: ${KYC_WEBHOOK_SECRET:-}
+  KYC_WEBHOOK_PUBLIC_URL: ${KYC_WEBHOOK_PUBLIC_URL:-}
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-chovot}
+      POSTGRES_USER: ${POSTGRES_USER:-chovot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - chovot_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [backend]
+
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    volumes:
+      - chovot_redis:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [backend]
+
+  minio:
+    image: quay.io/minio/minio:latest
+    restart: unless-stopped
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
+    volumes:
+      - chovot_minio:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    networks: [backend]
+
+  minio-init:
+    image: quay.io/minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?S3_ACCESS_KEY is required}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?S3_SECRET_KEY is required}
+      S3_PRIVATE_BUCKET: ${S3_PRIVATE_BUCKET:-chovot-private}
+      S3_PUBLIC_BUCKET: ${S3_PUBLIC_BUCKET:-chovot-public}
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        mc alias set local http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}"
+        mc mb --ignore-existing "local/$${S3_PRIVATE_BUCKET}"
+        mc mb --ignore-existing "local/$${S3_PUBLIC_BUCKET}"
+        mc admin user add local "$${S3_ACCESS_KEY}" "$${S3_SECRET_KEY}" || true
+        mc admin policy attach local readwrite --user "$${S3_ACCESS_KEY}"
+        mc anonymous set none "local/$${S3_PRIVATE_BUCKET}"
+        mc anonymous set download "local/$${S3_PUBLIC_BUCKET}"
+    restart: "no"
+    networks: [backend]
+
+  migrate:
+    build:
+      context: ./backend
+      target: migrate
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    networks: [backend]
+
+  api:
+    build:
+      context: ./backend
+      target: runtime
+    restart: unless-stopped
+    environment: *api-environment
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/v1/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
+    networks: [backend]
+
+  web:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.web
+    restart: unless-stopped
+    environment:
+      CHOVOT_DOMAIN: ${CHOVOT_DOMAIN:?CHOVOT_DOMAIN is required}
+      CHOVOT_STORAGE_DOMAIN: ${CHOVOT_STORAGE_DOMAIN:?CHOVOT_STORAGE_DOMAIN is required}
+      ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL is required}
+      S3_PUBLIC_BUCKET: ${S3_PUBLIC_BUCKET:-chovot-public}
+    depends_on:
+      api:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [backend]
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  chovot_pg:
+  chovot_redis:
+  chovot_minio:
+  caddy_data:
+  caddy_config:
