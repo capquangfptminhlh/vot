@@ -1,0 +1,27 @@
+FROM caddy:2.10-alpine
+
+WORKDIR /srv
+
+COPY *.html /srv/
+COPY robots.txt sitemap.xml manifest.webmanifest .nojekyll /srv/
+COPY assets /srv/assets
+COPY data /srv/data
+COPY hang /srv/hang
+COPY model /srv/model
+COPY admin /srv/admin
+COPY deploy/Caddyfile /etc/caddy/Caddyfile
+
+# The production web image always talks to the same-origin Nest API.
+# Preview/source files keep their own runtime config untouched.
+RUN cat > /srv/assets/runtime-config.js <<'EOF'
+(() => {
+  window.__CHOVOT_CONFIG__ = Object.freeze({
+    environment: "production",
+    apiBaseUrl: "/api/v1",
+    kycProvider: "server",
+    sentryDsn: "",
+  });
+})();
+EOF
+
+EXPOSE 80 443
