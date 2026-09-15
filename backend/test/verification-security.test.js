@@ -35,8 +35,12 @@ describe('seller verification security invariants', () => {
       status: 'SUSPENDED',
     });
 
-    await expect(service.startProvider('seller-1', 'identity')).rejects.toMatchObject({
-      response: 'SELLER_SUSPENDED',
-    });
+    try {
+      await service.startProvider('seller-1', 'identity');
+      throw new Error('Expected SELLER_SUSPENDED');
+    } catch (error) {
+      expect(error.getStatus()).toBe(403);
+      expect(error.getResponse()).toMatchObject({ message: 'SELLER_SUSPENDED' });
+    }
   });
 });
