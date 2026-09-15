@@ -20,6 +20,13 @@
     reverse_proxy api:3000
   }
 
+  # Socket.IO serves its transport endpoint at /socket.io while the ChoVot
+  # application namespace is /chat. Caddy handles WebSocket upgrades
+  # automatically through reverse_proxy.
+  handle /socket.io/* {
+    reverse_proxy api:3000
+  }
+
   handle_path /media/* {
     rewrite * /{$S3_PUBLIC_BUCKET}{path}
     reverse_proxy minio:9000
