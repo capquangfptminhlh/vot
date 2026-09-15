@@ -5,12 +5,34 @@ on:
     branches: [main]
     paths:
       - 'backend/**'
+      - 'deploy/**'
       - 'docker-compose.yml'
+      - 'docker-compose.production.yml'
+      - '*.html'
+      - 'assets/**'
+      - 'data/**'
+      - 'hang/**'
+      - 'model/**'
+      - 'admin/**'
+      - 'robots.txt'
+      - 'sitemap.xml'
+      - 'manifest.webmanifest'
       - '.github/workflows/backend-container.yml'
   pull_request:
     paths:
       - 'backend/**'
+      - 'deploy/**'
       - 'docker-compose.yml'
+      - 'docker-compose.production.yml'
+      - '*.html'
+      - 'assets/**'
+      - 'data/**'
+      - 'hang/**'
+      - 'model/**'
+      - 'admin/**'
+      - 'robots.txt'
+      - 'sitemap.xml'
+      - 'manifest.webmanifest'
       - '.github/workflows/backend-container.yml'
 
 permissions:
@@ -19,12 +41,56 @@ permissions:
 jobs:
   container-build:
     runs-on: ubuntu-latest
+    env:
+      CHOVOT_DOMAIN: chovot.test
+      CHOVOT_STORAGE_DOMAIN: storage.chovot.test
+      ACME_EMAIL: ci@chovot.test
+      POSTGRES_DB: chovot
+      POSTGRES_USER: chovot
+      POSTGRES_PASSWORD: ci-postgres-password
+      DATABASE_URL: postgresql://chovot:ci-postgres-password@postgres:5432/chovot?schema=public
+      REDIS_PASSWORD: ci-redis-password
+      JWT_ACCESS_SECRET: ci-jwt-access-secret-change-me-123456789
+      OTP_PEPPER: ci-otp-pepper-change-me-123456789012345
+      REFRESH_TOKEN_PEPPER: ci-refresh-pepper-change-me-123456789012
+      IP_HASH_PEPPER: ci-ip-pepper-change-me-12345678901234567
+      SERIAL_HASH_PEPPER: ci-serial-pepper-change-me-12345678901234
+      MINIO_ROOT_USER: ci-minio-root
+      MINIO_ROOT_PASSWORD: ci-minio-root-password-change-me
+      S3_ACCESS_KEY: ci-s3-access
+      S3_SECRET_KEY: ci-s3-secret-password-change-me
+      S3_PRIVATE_BUCKET: chovot-private
+      S3_PUBLIC_BUCKET: chovot-public
+
     steps:
       - uses: actions/checkout@v7
-      - name: Validate compose file
+
+      - name: Validate local compose file
         run: docker compose config --quiet
-      - name: Build production API image
-        run: docker build --pull --tag chovot-api:ci backend
-      - name: Verify runtime artifact
+
+      - name: Validate production compose file
+        run: docker compose -f docker-compose.production.yml config --quiet
+
+      - name: Build production API runtime image
+        run: docker build --pull --target runtime --tag chovot-api:ci backend
+
+      - name: Build migration image
+        run: docker build --target migrate --tag chovot-migrate:ci backend
+
+      - name: Verify API runtime artifact
         run: |
           docker run --rm --entrypoint sh chovot-api:ci -c 'test -f /app/dist/main.js && test -f /app/prisma/schema.prisma && test -f /app/package.json'
+          docker run --rm --entrypoint sh chovot-migrate:ci -c 'test -x /app/node_modules/.bin/prisma && test -x /app/node_modules/.bin/ts-node && test -f /app/prisma/seed.ts'
+
+      - name: Build production web image
+        run: docker build --pull -f deploy/Dockerfile.web --tag chovot-web:ci .
+
+      - name: Verify production web artifact and Caddy config
+        run: |
+          docker run --rm --entrypoint sh chovot-web:ci -c 'test -f /srv/index.html && test -f /srv/assets/runtime-config.js && test ! -e /srv/backend && test ! -e /srv/docs && test ! -e /srv/qa'
+          docker run --rm \
+            -e CHOVOT_DOMAIN="$CHOVOT_DOMAIN" \
+            -e CHOVOT_STORAGE_DOMAIN="$CHOVOT_STORAGE_DOMAIN" \
+            -e ACME_EMAIL="$ACME_EMAIL" \
+            -e S3_PUBLIC_BUCKET="$S3_PUBLIC_BUCKET" \
+            --entrypoint caddy chovot-web:ci validate --config /etc/caddy/Caddyfile
