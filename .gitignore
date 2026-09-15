@@ -1,0 +1,23 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# Local production operations
+backups/
+*.dump
+*.backup
+
+# Node / build outputs
+backend/node_modules/
+backend/dist/
+_site/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
