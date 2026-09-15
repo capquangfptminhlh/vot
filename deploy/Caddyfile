@@ -1,0 +1,54 @@
+{
+  email {$ACME_EMAIL}
+  admin off
+}
+
+{$CHOVOT_DOMAIN} {
+  encode zstd gzip
+
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "DENY"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    Permissions-Policy "camera=(), microphone=()"
+    Content-Security-Policy "frame-ancestors 'none'; object-src 'none'; base-uri 'self'"
+    -Server
+  }
+
+  handle /api/* {
+    reverse_proxy api:3000
+  }
+
+  handle_path /media/* {
+    rewrite * /{$S3_PUBLIC_BUCKET}{path}
+    reverse_proxy minio:9000
+  }
+
+  @runtimeConfig path /assets/runtime-config.js
+  header @runtimeConfig Cache-Control "no-store, max-age=0"
+
+  handle {
+    root * /srv
+    file_server
+  }
+
+  handle_errors {
+    rewrite * /404.html
+    file_server
+  }
+}
+
+{$CHOVOT_STORAGE_DOMAIN} {
+  @preflight method OPTIONS
+  header {
+    Access-Control-Allow-Origin "https://{$CHOVOT_DOMAIN}"
+    Access-Control-Allow-Methods "GET, HEAD, PUT, OPTIONS"
+    Access-Control-Allow-Headers "*"
+    Access-Control-Max-Age "86400"
+    X-Content-Type-Options "nosniff"
+    -Server
+  }
+  respond @preflight 204
+  reverse_proxy minio:9000
+}
