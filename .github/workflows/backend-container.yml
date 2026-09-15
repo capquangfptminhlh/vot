@@ -65,6 +65,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Validate production operation scripts
+        shell: bash
+        run: bash -n deploy/backup.sh deploy/restore.sh
+
       - name: Validate local compose file
         run: docker compose config --quiet
 
