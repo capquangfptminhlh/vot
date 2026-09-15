@@ -91,6 +91,7 @@ jobs:
 
       - name: Verify production web artifact and Caddy config
         run: |
+          grep -Fq 'handle /socket.io/*' deploy/Caddyfile
           docker run --rm --entrypoint sh chovot-web:ci -c 'test -f /srv/index.html && test -f /srv/assets/runtime-config.js && test ! -e /srv/backend && test ! -e /srv/docs && test ! -e /srv/qa'
           docker run --rm \
             -e CHOVOT_DOMAIN="$CHOVOT_DOMAIN" \
